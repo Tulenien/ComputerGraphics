@@ -1,16 +1,15 @@
 ﻿#ifndef MATRIX_H
 #define MATRIX_H
 
-
 #define OK 0
 #define ERROR 1
 
 class Matrix
 {
 public:
-    Matrix(int, int);
+    Matrix();
     ~Matrix();
-    void FillwithArray(double **array);
+    void FillwithArray(double **, int, int);
     void Multiply(const Matrix &, Matrix &);
     int getRows();
     int getCols();

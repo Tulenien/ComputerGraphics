@@ -1,14 +1,10 @@
 ﻿#include "matrix.h"
 
-Matrix::Matrix(int rows, int cols)
+Matrix::Matrix()
 {
-    rows_num = rows;
-    cols_num = cols;
-    container = new double* [rows];
-    for (int i = 0; i < rows; i++)
-    {
-        container[i] = new double[cols];
-    }
+    container = nullptr;
+    rows_num = 0;
+    cols_num = 0;
 }
 
 Matrix::~Matrix()
@@ -22,8 +18,15 @@ Matrix::~Matrix()
     cols_num = 0;
 }
 
-void Matrix::FillwithArray(double **array)
+void Matrix::FillwithArray(double **array, int rows, int cols)
 {
+    rows_num = rows;
+    cols_num = cols;
+    container = new double* [rows];
+    for (int i = 0; i < rows; i++)
+    {
+        container[i] = new double[cols];
+    }
     for(int i = 0; i < rows_num; i++)
     {
         for(int j = 0; i < cols_num; j++)
