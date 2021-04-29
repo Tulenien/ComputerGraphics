@@ -12,4 +12,8 @@ Scene::Scene(QWidget *parent)
         image->setPixel(i, j, line_color.rgba());
     }
     this->setPixmap(QPixmap::fromImage(*image));
+
+    // Test
+//    items = new Item;
+//    items->polygons->
 }

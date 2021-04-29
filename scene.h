@@ -3,6 +3,7 @@
 
 #include <QLabel>
 #include <QDebug>
+#include "item.h"
 // Add ZBuffer and
 // find the way to change it whenever object rotate
 
@@ -25,6 +26,7 @@ public:
 private:
     qreal width, length, height;
     QImage *buffer;
+    Item *items;
     void transform(qreal distance);
     void draw();
 };
