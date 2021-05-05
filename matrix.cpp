@@ -18,7 +18,7 @@ Matrix::~Matrix()
     cols_num = 0;
 }
 
-void Matrix::FillwithArray(double **array, int rows, int cols)
+void Matrix::FillwithArray(double *&array, int rows, int cols)
 {
     rows_num = rows;
     cols_num = cols;
@@ -29,9 +29,9 @@ void Matrix::FillwithArray(double **array, int rows, int cols)
     }
     for(int i = 0; i < rows_num; i++)
     {
-        for(int j = 0; i < cols_num; j++)
+        for(int j = 0; j < cols_num; j++)
         {
-            container[i][j] = *array[i * cols_num + j];
+            container[i][j] = array[i * cols_num + j];
         }
     }
 }
@@ -42,6 +42,13 @@ void Matrix::Multiply(const Matrix &right, Matrix &result)
     int rows = this->rows_num;
     int cols = right.cols_num;
     int nest = this->cols_num;
+    result.rows_num = rows;
+    result.cols_num = cols;
+    result.container = new double* [rows];
+    for (int i = 0; i < rows; i++)
+    {
+        result.container[i] = new double[cols];
+    }
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
@@ -49,7 +56,7 @@ void Matrix::Multiply(const Matrix &right, Matrix &result)
             result.container[i][j] = 0;
             for (int k = 0; k < nest; k++)
             {
-                result.container[i][j] =
+                result.container[i][j] +=
                  this->container[i][k] * right.container[k][j];
             }
         }
@@ -74,4 +81,17 @@ int Matrix::getRows()
 int Matrix::getCols()
 {
     return cols_num;
+}
+
+void Matrix::printMatrix()
+{
+    // Function for testing
+    for (int i = 0; i < rows_num; i++)
+    {
+        for (int j = 0; j < cols_num; j++)
+        {
+            qDebug() << container[i][j] << " ";
+        }
+    }
+    qDebug() << "\n";
 }
