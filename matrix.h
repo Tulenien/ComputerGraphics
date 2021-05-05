@@ -5,22 +5,24 @@
 #define ERROR 1
 
 #include "QDebug"
+#include <vector>
+
+typedef std::vector<std::vector<double>> matrix;
 
 class Matrix
 {
 public:
     Matrix();
     ~Matrix();
-    void FillwithArray(double *&, int, int);
+    void FillwithArray(double *, int rows, int cols);
+    void AddRows(double *, int rows_num);
     void Multiply(const Matrix &, Matrix &);
     int getRows();
     int getCols();
-    void setRows(int rows);
-    void setCols(int cols);
     void printMatrix();
 
 private:
-    double **container;
+    matrix container;
     int rows_num;
     int cols_num;
 };
