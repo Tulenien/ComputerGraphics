@@ -11,7 +11,7 @@ Matrix::~Matrix()
 
 }
 
-void Matrix::FillwithArray(double *array, int rows, int cols)
+void Matrix::FillwithArray(const std::vector<double> &array, int rows, int cols)
 {
     rows_num = rows;
     cols_num = cols;
@@ -26,7 +26,7 @@ void Matrix::FillwithArray(double *array, int rows, int cols)
     }
 }
 
-void Matrix::AddRows(double *array, int rows_number)
+void Matrix::AddRows(const std::vector<double> &array, int rows_number)
 {
     std::vector<double> temp(cols_num);
     for (int i = 0; i < rows_number; i++)
@@ -70,6 +70,21 @@ int Matrix::getRows()
 int Matrix::getCols()
 {
     return cols_num;
+}
+
+void Matrix::setCols(int cols)
+{
+    cols_num = cols;
+}
+
+void Matrix::setRows(int rows)
+{
+    rows_num = rows;
+}
+
+void Matrix::setRowsFromVector()
+{
+    rows_num = container.size();
 }
 
 void Matrix::printMatrix()

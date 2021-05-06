@@ -14,11 +14,14 @@ class Matrix
 public:
     Matrix();
     ~Matrix();
-    void FillwithArray(double *, int rows, int cols);
-    void AddRows(double *, int rows_num);
+    void FillwithArray(const std::vector<double> &array, int rows, int cols);
+    void AddRows(const std::vector<double> &array, int rows_num);
     void Multiply(const Matrix &, Matrix &);
     int getRows();
-    int getCols();
+    int getCols(); 
+    void setCols(int );
+    void setRows(int );
+    void setRowsFromVector();
     void printMatrix();
 
 private:
