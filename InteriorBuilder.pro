@@ -19,14 +19,12 @@ SOURCES += \
     item.cpp \
     main.cpp \
     mainwindow.cpp \
-    matrix.cpp \
     scene.cpp \
     settings.cpp
 
 HEADERS += \
     item.h \
     mainwindow.h \
-    matrix.h \
     scene.h \
     settings.h
 

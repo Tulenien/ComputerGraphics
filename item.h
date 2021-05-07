@@ -1,8 +1,10 @@
 ﻿#ifndef ITEM_H
 #define ITEM_H
 
-#include "matrix.h"
+#include <vector>
 #include <QFile>
+#include <QDebug>
+typedef std::vector<std::vector<double>> matrix;
 
 struct point_t
 {
@@ -44,6 +46,13 @@ public:
     // Rotate with scene: center always (0, 0, 0)
     void Rotate(double angleOX, double angleOY);
 
+    // Temporary in public. Hide realization after test
+    // Matrix operations functions
+    // Returns False if sizes are wrong, rewrites results in A
+    bool multiplyMatrix(matrix &A, const matrix &B);
+    // Returns Copy of matrix
+    //matrix &multiplyMatrix(const matrix &A, const matrix &B);
+
 private:
     // To check collisions with other point
     point_t minPoint, maxPoint;
@@ -63,10 +72,10 @@ private:
     matrix vPerspective, nPerspective;
     // Textures, not changed
     matrix textures;
+    // TODO: Add matrix to store transformations
 
     // Load .obj file, call loadMtl from inside
     void loadObj(const QString dir, const QString file);
-
     // Read from .mtl file
     QMap<QString, material> materialMap;
     void loadMtl(const QString path);

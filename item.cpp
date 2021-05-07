@@ -2,8 +2,8 @@
 
 Item::Item(QString dir, QString file)
 {
+    // Load mtl file inside
     loadObj(dir, file);
-
 }
 
 void Item::loadObj(const QString dir, const QString file)
@@ -180,4 +180,36 @@ void Item::loadMtl(const QString path)
         }
     }
     mtlFile.close();
+}
+
+bool Item::multiplyMatrix(matrix &A, const matrix &B)
+{
+    bool status = true;
+    // Standart multiplication algorithm
+    int rows = A.size();
+    int cols = B[0].size();
+    int nest = B.size();
+    if (A[0].size() != nest) status = false;
+    else
+    {
+        matrix temp;
+        for (int i = 0; i < rows; i++)
+        {
+            std::vector<double> row(cols);
+            for (int j = 0; j < cols; j++)
+            {
+                for (int k = 0; k < nest; k++)
+                {
+                    row[j] += A[i][k] * B[k][j];
+                }
+            }
+            temp.push_back(row);
+        }
+        A.clear();
+        for (int i = 0; i < rows; i++)
+        {
+            A.push_back(temp[i]);
+        }
+    }
+    return status;
 }
