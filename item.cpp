@@ -20,9 +20,6 @@ void Item::loadObj(const QString dir, const QString file)
     QStringList stringList;
     std::vector<double> temp(3);
     QString currentMaterial;
-    vOriginal.setCols(3);
-    nOriginal.setCols(3);
-    textures.setCols(3);
     while(!pipeline.atEnd())
     {
         line = pipeline.readLine();
@@ -37,24 +34,33 @@ void Item::loadObj(const QString dir, const QString file)
             }
             else if (!QString::compare(stringList[0], "v"))
             {
-                temp[0] = stringList[1].toDouble();
-                temp[1] = stringList[2].toDouble();
-                temp[2] = stringList[3].toDouble();
-                vOriginal.AddRows(temp, 1);
+                temp =
+                {
+                    stringList[1].toDouble(),
+                    stringList[2].toDouble(),
+                    stringList[3].toDouble()
+                };
+                vOriginal.push_back(temp);
             }
             else if (!QString::compare(stringList[0], "vt"))
             {
-                temp[0] = stringList[1].toDouble();
-                temp[1] = stringList[2].toDouble();
-                temp[2] = stringList[3].toDouble();
-                textures.AddRows(temp, 1);
+                temp =
+                {
+                    stringList[1].toDouble(),
+                    stringList[2].toDouble(),
+                    stringList[3].toDouble()
+                };
+                textures.push_back(temp);
             }
             else if (!QString::compare(stringList[0], "vn"))
             {
-                temp[0] = stringList[1].toDouble();
-                temp[1] = stringList[2].toDouble();
-                temp[2] = stringList[3].toDouble();
-                nOriginal.AddRows(temp, 1);
+                temp =
+                {
+                    stringList[1].toDouble(),
+                    stringList[2].toDouble(),
+                    stringList[3].toDouble()
+                };
+                nOriginal.push_back(temp);
             }
             else if(!QString::compare(stringList[0], "usemtl"))
             {
@@ -65,24 +71,30 @@ void Item::loadObj(const QString dir, const QString file)
                 QStringList polygonP1 = stringList[1].split("/", Qt::KeepEmptyParts);
                 QStringList polygonP2 = stringList[2].split("/", Qt::KeepEmptyParts);
                 QStringList polygonP3 = stringList[3].split("/", Qt::KeepEmptyParts);
-                polygon tempPolygon;
-                tempPolygon.materialKey = currentMaterial;
-                tempPolygon.points[0] = polygonP1[0].toInt() - 1;
-                tempPolygon.points[1] = polygonP2[0].toInt() - 1;
-                tempPolygon.points[2] = polygonP3[0].toInt() - 1;
-                tempPolygon.textures[0] = polygonP1[1].toInt() - 1;
-                tempPolygon.textures[1] = polygonP2[1].toInt() - 1;
-                tempPolygon.textures[2] = polygonP3[1].toInt() - 1;
-                tempPolygon.normals[0] = polygonP1[2].toInt() - 1;
-                tempPolygon.normals[1] = polygonP2[2].toInt() - 1;
-                tempPolygon.normals[2] = polygonP3[2].toInt() - 1;
+                polygon tempPolygon
+                {
+                    // Material, points, normals, textures
+                    currentMaterial,
+                    {
+                        polygonP1[0].toInt() - 1,
+                        polygonP2[0].toInt() - 1,
+                        polygonP3[0].toInt() - 1,
+                    },
+                    {
+                        polygonP1[2].toInt() - 1,
+                        polygonP2[2].toInt() - 1,
+                        polygonP3[2].toInt() - 1,
+                    },
+                    {
+                        polygonP1[1].toInt() - 1,
+                        polygonP2[1].toInt() - 1,
+                        polygonP3[1].toInt() - 1,
+                    }
+                };
                 polygons.append(tempPolygon);
             }
         }
     }
-    vOriginal.setRowsFromVector();
-    nOriginal.setRowsFromVector();
-    textures.setRowsFromVector();
     objFile.close();
 }
 
@@ -116,6 +128,7 @@ void Item::loadMtl(const QString path)
                     // Load to QMap
                     materialMap.insert(currentMaterial, temp);
                 }
+                // illum, ka, kd, ks, ni, ns
                 temp = {0, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0, 0};
                 currentMaterial = stringList[1];
                 materialEnd = true;
@@ -126,21 +139,30 @@ void Item::loadMtl(const QString path)
             }
             else if (!QString::compare(stringList[0], "Ka"))
             {
-                temp.ka.red = stringList[1].toDouble();
-                temp.ka.green = stringList[2].toDouble();
-                temp.ka.blue = stringList[3].toDouble();
+                temp.ka =
+                {
+                    stringList[1].toDouble(),
+                    stringList[2].toDouble(),
+                    stringList[3].toDouble(),
+                };
             }
             else if (!QString::compare(stringList[0], "Kd"))
             {
-                temp.kd.red = stringList[1].toDouble();
-                temp.kd.green = stringList[2].toDouble();
-                temp.kd.blue = stringList[3].toDouble();
+                temp.kd =
+                {
+                    stringList[1].toDouble(),
+                    stringList[2].toDouble(),
+                    stringList[3].toDouble(),
+                };
             }
             else if (!QString::compare(stringList[0], "Ks"))
             {
-                temp.ks.red = stringList[1].toDouble();
-                temp.ks.green = stringList[2].toDouble();
-                temp.ks.blue = stringList[3].toDouble();
+                temp.ks =
+                {
+                    stringList[1].toDouble(),
+                    stringList[2].toDouble(),
+                    stringList[3].toDouble(),
+                };
             }
             else if (!QString::compare(stringList[0], "Ns"))
             {

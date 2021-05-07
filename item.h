@@ -50,19 +50,19 @@ private:
     void getBorder();
 
     // Starting points matrix
-    Matrix vOriginal, nOriginal;
+    matrix vOriginal, nOriginal;
     // Matrix to save operations of shift and rotate
     // Able to change Items positions
-    Matrix transform;
+    matrix transform;
     // Matrix to save after transformation for further do
-    Matrix vShifted, nShifted;
+    matrix vShifted, nShifted;
     // Matrix to save coordinates on scene and to rotate
     // For rotating scene only
-    Matrix vScene, nScene;
+    matrix vScene, nScene;
     // Not able to move/rotate nor items nor scene
-    Matrix vPerspective, nPerspective;
+    matrix vPerspective, nPerspective;
     // Textures, not changed
-    Matrix textures;
+    matrix textures;
 
     // Load .obj file, call loadMtl from inside
     void loadObj(const QString dir, const QString file);
