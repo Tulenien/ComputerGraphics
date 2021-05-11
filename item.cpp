@@ -113,7 +113,7 @@ void Item::loadMtl(const QString path)
     material temp;
     bool materialEnd = false;
     // End of file status
-    bool eof;
+    bool eof = false;
     while(!eof)
     {
         line = pipeline.readLine();
@@ -186,19 +186,19 @@ bool Item::multiplyMatrix(matrix &A, const matrix &B)
 {
     bool status = true;
     // Standart multiplication algorithm
-    int rows = A.size();
-    int cols = B[0].size();
-    int nest = B.size();
+    std::size_t rows = A.size();
+    std::size_t cols = B[0].size();
+    std::size_t nest = B.size();
     if (A[0].size() != nest) status = false;
     else
     {
         matrix temp;
-        for (int i = 0; i < rows; i++)
+        for (std::size_t i = 0; i < rows; i++)
         {
             std::vector<double> row(cols);
-            for (int j = 0; j < cols; j++)
+            for (std::size_t j = 0; j < cols; j++)
             {
-                for (int k = 0; k < nest; k++)
+                for (std::size_t k = 0; k < nest; k++)
                 {
                     row[j] += A[i][k] * B[k][j];
                 }
@@ -206,7 +206,7 @@ bool Item::multiplyMatrix(matrix &A, const matrix &B)
             temp.push_back(row);
         }
         A.clear();
-        for (int i = 0; i < rows; i++)
+        for (std::size_t i = 0; i < rows; i++)
         {
             A.push_back(temp[i]);
         }
