@@ -1,9 +1,12 @@
 ﻿#ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <QWidget>
-#include <QTreeWidget>
 #include <QDebug>
+#include <QWidget>
+#include <iostream>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QFileSystemModel>
 
 namespace Ui {
 class Settings;
@@ -19,6 +22,11 @@ public:
 
 private:
     Ui::Settings *ui;
+
+    void loadItemCatalog(const QString &);
+
+private slots:
+    void AddItems();
 };
 
 #endif // SETTINGS_H
