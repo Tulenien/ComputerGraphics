@@ -4,6 +4,7 @@
 #include <vector>
 #include <QFile>
 #include <QDebug>
+
 typedef std::vector<std::vector<double>> matrix;
 
 struct point_t
