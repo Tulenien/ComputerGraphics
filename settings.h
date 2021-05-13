@@ -7,6 +7,7 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QFileSystemModel>
+#include "scene.h"
 
 namespace Ui {
 class Settings;
@@ -19,10 +20,11 @@ class Settings : public QWidget
 public:
     explicit Settings(QWidget *parent = nullptr);
     ~Settings();
+    Scene *scene;
 
 private:
     Ui::Settings *ui;
-
+    const QString *catalogPath;
     void loadItemCatalog(const QString &);
 
 private slots:

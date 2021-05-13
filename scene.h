@@ -14,6 +14,7 @@ class Scene : public QLabel
 public:
     QImage *image;
     Scene(QWidget *parent);
+    void addItem(QString dir, QString item);
     void setWidth(qreal width);
     void setLength(qreal length);
     void setHeight(qreal height);
@@ -26,7 +27,7 @@ public:
 private:
     qreal width, length, height;
     QImage *buffer;
-    Item *items;
+    QVector<Item> items;
     void transform(qreal distance);
     void draw();
 };

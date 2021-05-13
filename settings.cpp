@@ -7,8 +7,8 @@ Settings::Settings(QWidget *parent) :
 {
     ui->setupUi(this);
     // Load all available interior items to itemCatalog
-    const QString catalogPath = "C:/Users/timof/Documents/Programming/ComputerGraphics/QtProjects/InteriorBuilder/models";
-    loadItemCatalog(catalogPath);
+    catalogPath = new QString("C:/Users/timof/Documents/Programming/ComputerGraphics/QtProjects/InteriorBuilder/models");
+    loadItemCatalog(*catalogPath);
 
     connect(ui->addItemsButton, &QPushButton::released, this, &Settings::AddItems);
 }
@@ -23,7 +23,7 @@ void Settings::loadItemCatalog(const QString &catalogPath)
     QDir path(catalogPath);
     QDir filepath("");
     QStringList items;
-    qDebug() << path.entryList(QDir::NoDotAndDotDot | QDir::AllDirs) << path.absolutePath();
+    //qDebug() << path.entryList(QDir::NoDotAndDotDot | QDir::AllDirs) << path.absolutePath();
     QStringList folders = path.entryList(QDir::NoDotAndDotDot | QDir::AllDirs);
     for (int i = 0; i < folders.count(); i++)
     {
@@ -36,7 +36,6 @@ void Settings::loadItemCatalog(const QString &catalogPath)
             QTreeWidgetItem *item = new QTreeWidgetItem(root);
             item->setText(0, items[j].replace(".obj", ""));
             item->setCheckState(0, Qt::Unchecked);
-            root->addChild(item);
         }
     }
 }
@@ -56,10 +55,13 @@ void Settings::AddItems()
                 // Check if Item is added before
                 //ui->ItemListWdt->findItems(item[i].text(0), Qt::MatchExactly).size()
                 QListWidgetItem *listItem = new QListWidgetItem;
-                listItem->setText(item->child(j)->text(0));
+                QString itemName = item->child(j)->text(0);
+                listItem->setText(itemName);
                 ui->ItemListWdt->insertItem(0, listItem);
                 item->child(j)->setCheckState(0, Qt::Unchecked);
+                scene->addItem(*catalogPath + "/" + item->text(0), itemName);
             }
         }
     }
 }
+

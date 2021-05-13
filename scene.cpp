@@ -12,8 +12,10 @@ Scene::Scene(QWidget *parent)
         image->setPixel(i, j, line_color.rgba());
     }
     this->setPixmap(QPixmap::fromImage(*image));
+}
 
-    // Test
-//    items = new Item;
-//    items->polygons->
+void Scene::addItem(QString dir, QString item)
+{
+    items.push_back(Item(dir, item));
+    qDebug() << dir << item;
 }
