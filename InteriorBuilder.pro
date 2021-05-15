@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     item.cpp \
+    itemmenu.cpp \
     main.cpp \
     mainwindow.cpp \
     scene.cpp \
@@ -24,11 +25,13 @@ SOURCES += \
 
 HEADERS += \
     item.h \
+    itemmenu.h \
     mainwindow.h \
     scene.h \
     settings.h
 
 FORMS += \
+    itemmenu.ui \
     mainwindow.ui \
     settings.ui
 

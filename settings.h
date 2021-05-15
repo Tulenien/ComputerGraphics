@@ -6,8 +6,10 @@
 #include <iostream>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <QListWidget>
 #include <QFileSystemModel>
 #include "scene.h"
+#include "itemmenu.h"
 
 namespace Ui {
 class Settings;
@@ -30,6 +32,7 @@ private:
 private slots:
     void AddItems();
     void sceneSizeChanged();
+    void openItemMenu(QListWidgetItem *item);
 };
 
 #endif // SETTINGS_H

@@ -17,6 +17,7 @@ Settings::Settings(QWidget *parent) :
     ui->widthField->setValidator(&horizontalValidator);
     connect(ui->addItemsButton, &QPushButton::released, this, &Settings::AddItems);
     connect(ui->setSceneSize, &QPushButton::released, this, &Settings::sceneSizeChanged);
+    connect(ui->ItemListWdt, &QListWidget::itemDoubleClicked, this, &Settings::openItemMenu);
 }
 
 Settings::~Settings()
@@ -78,4 +79,13 @@ void Settings::sceneSizeChanged()
     double height = ui->heightField->text().toDouble();
     // call Size Change in scene
     scene->setSize(width, length, height);
+}
+
+void Settings::openItemMenu(QListWidgetItem *item)
+{
+    itemMenu *menu = new itemMenu();
+    // Set index of item in Scene's QList of Items
+    menu->setCurrentIndex(ui->ItemListWdt->row(item));
+    menu->setWindowTitle(item->text());
+    menu->show();
 }
