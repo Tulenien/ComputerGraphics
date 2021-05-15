@@ -29,6 +29,7 @@ private:
 
 private slots:
     void AddItems();
+    void sceneSizeChanged();
 };
 
 #endif // SETTINGS_H

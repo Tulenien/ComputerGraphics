@@ -9,8 +9,14 @@ Settings::Settings(QWidget *parent) :
     // Load all available interior items to itemCatalog
     catalogPath = new QString("C:/Users/timof/Documents/Programming/ComputerGraphics/QtProjects/InteriorBuilder/models");
     loadItemCatalog(*catalogPath);
-
+    // Set validators to prevent bad values
+    QDoubleValidator verticalValidator(1, 501, 6);
+    QDoubleValidator horizontalValidator(1, 10001, 6);
+    ui->heightField->setValidator(&verticalValidator);
+    ui->lengthField->setValidator(&horizontalValidator);
+    ui->widthField->setValidator(&horizontalValidator);
     connect(ui->addItemsButton, &QPushButton::released, this, &Settings::AddItems);
+    connect(ui->setSceneSize, &QPushButton::released, this, &Settings::sceneSizeChanged);
 }
 
 Settings::~Settings()
@@ -65,3 +71,11 @@ void Settings::AddItems()
     }
 }
 
+void Settings::sceneSizeChanged()
+{
+    double width = ui->widthField->text().toDouble();
+    double length = ui->lengthField->text().toDouble();
+    double height = ui->heightField->text().toDouble();
+    // call Size Change in scene
+    scene->setSize(width, length, height);
+}

@@ -2,6 +2,9 @@
 
 Scene::Scene(QWidget *parent)
 {
+    width = 200;
+    length = 200;
+    height = 250;
     QSize size = this->size();
     qDebug() << size;
     image = new QImage(size, QImage::Format_RGBA8888);
@@ -17,5 +20,32 @@ Scene::Scene(QWidget *parent)
 void Scene::addItem(QString dir, QString item)
 {
     items.push_back(Item(dir, item));
-    qDebug() << dir << item;
+    items.last().setToFloor(-height / 2);
+}
+
+double Scene::getWidth()
+{
+    return width;
+}
+
+double Scene::getLength()
+{
+    return length;
+}
+
+double Scene::getHeight()
+{
+    return height;
+}
+
+void Scene::setSize(double &width, double &length, double &height)
+{
+    this->width = width;
+    this->length = length;
+    this->height = height;
+    double offset = -height / 2;
+    for (int i = 0; i < items.size(); i++)
+    {
+        items[i].setToFloor(offset);
+    }
 }

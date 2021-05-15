@@ -4,6 +4,9 @@
 #include <vector>
 #include <QFile>
 #include <QDebug>
+#include <cmath>
+
+#define PI 3.14159265
 
 typedef std::vector<std::vector<double>> matrix;
 
@@ -40,25 +43,30 @@ class Item
 {
 public:
     Item(QString dir, QString file);
+    //~Item();
     point_t Center();
-    void Move();
+    void setToFloor(double height);
+    void Move(double x, double y, double z);
     // Rotate Item around
     void Spin(double angleOY);
     // Rotate with scene: center always (0, 0, 0)
-    void Rotate(double angleOX, double angleOY);
+    //void Rotate(double angleOX, double angleOY);
+    void RotateOY(double angle);
 
     // Temporary in public. Hide realization after test
     // Matrix operations functions
     // Returns False if sizes are wrong, rewrites results in A
     bool multiplyMatrix(matrix &A, const matrix &B);
-    // Returns Copy of matrix
-    //matrix &multiplyMatrix(const matrix &A, const matrix &B);
+    // Returns Copy of matrix in C
+    void multiplyMatrix(const matrix &A, const matrix &B, matrix &C);
 
 private:
     // To check collisions with other point
     point_t minPoint, maxPoint;
     void getBorder();
 
+    // Change y-coordinate to put item on floor
+    double toFloor;
     // Starting points matrix
     matrix vOriginal, nOriginal;
     // Matrix to save operations of shift and rotate

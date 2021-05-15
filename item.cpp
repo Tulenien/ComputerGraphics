@@ -38,7 +38,8 @@ void Item::loadObj(const QString dir, const QString file)
                 {
                     stringList[1].toDouble(),
                     stringList[2].toDouble(),
-                    stringList[3].toDouble()
+                    stringList[3].toDouble(),
+                    1
                 };
                 vOriginal.push_back(temp);
             }
@@ -48,7 +49,8 @@ void Item::loadObj(const QString dir, const QString file)
                 {
                     stringList[1].toDouble(),
                     stringList[2].toDouble(),
-                    stringList[3].toDouble()
+                    stringList[3].toDouble(),
+                    1
                 };
                 textures.push_back(temp);
             }
@@ -58,7 +60,8 @@ void Item::loadObj(const QString dir, const QString file)
                 {
                     stringList[1].toDouble(),
                     stringList[2].toDouble(),
-                    stringList[3].toDouble()
+                    stringList[3].toDouble(),
+                    1
                 };
                 nOriginal.push_back(temp);
             }
@@ -212,4 +215,105 @@ bool Item::multiplyMatrix(matrix &A, const matrix &B)
         }
     }
     return status;
+}
+
+void Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
+{
+    // No size-check, result saved in C
+    // Standart multiplication algorithm
+    std::size_t rows = A.size();
+    std::size_t cols = B[0].size();
+    std::size_t nest = B.size();
+    for (std::size_t i = 0; i < rows; i++)
+    {
+        std::vector<double> row(cols);
+        for (std::size_t j = 0; j < cols; j++)
+        {
+            for (std::size_t k = 0; k < nest; k++)
+            {
+                row[j] += A[i][k] * B[k][j];
+            }
+        }
+        C.push_back(row);
+    }
+}
+
+/*void Item::RotateOX(double angleOX)
+//{
+//    // Angle must be inversed:
+//    // cosine of negative number is the same
+//    // as cosine of positive one
+//    // negative sine of negative number
+//    // is the same as sine of this positive number
+//    // Angle in radians
+//    double radAngle = angleOX * PI / 180.;
+//    const matrix rotate =
+//    {
+//        {1, 0, 0, 0},
+//        {0, cos(radAngle), sin(radAngle), 0},
+//        {0, sin(-radAngle), cos(radAngle), 0},
+//        {0, 0, 0, 1}
+//    };
+//    if(transform.empty())
+//    {
+//        for (std::size_t i = 0; i < 4; i++)
+//        {
+//            transform.push_back(rotate[i]);
+//        }
+//    }
+//    else multiplyMatrix(transform, rotate);
+//    // points and normals changed from original state to last change
+//    multiplyMatrix(vOriginal, transform, vShifted);
+//    multiplyMatrix(nOriginal, transform, nShifted);
+//}*/
+
+void Item::RotateOY(double angle)
+{
+    // Angle in radians
+    double radAngle = angle * PI / 180.;
+    const matrix rotate =
+    {
+        {cos(radAngle), 0, -sin(radAngle), 0},
+        {0, 1, 0, 0},
+        {sin(radAngle), 0, cos(radAngle), 0},
+        {0, 0, 0, 1}
+    };
+    if(transform.empty())
+    {
+        for (std::size_t i = 0; i < 4; i++)
+        {
+                transform.push_back(rotate[i]);
+        }
+    }
+    else multiplyMatrix(transform, rotate);
+    // points and normals changed from original state to last change
+    multiplyMatrix(vOriginal, transform, vShifted);
+    multiplyMatrix(nOriginal, transform, nShifted);
+}
+
+void Item::Move(double x, double y, double z)
+{
+    matrix move =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {x, y, z, 1}
+    };
+    if(transform.empty())
+    {
+        for (std::size_t i = 0; i < 4; i++)
+        {
+                transform.push_back(move[i]);
+        }
+    }
+    else multiplyMatrix(transform, move);
+    // points and normals changed from original state to last change
+    multiplyMatrix(vOriginal, transform, vShifted);
+    multiplyMatrix(nOriginal, transform, nShifted);
+}
+
+void Item::setToFloor(double height)
+{
+    toFloor = height;
 }

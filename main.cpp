@@ -10,31 +10,8 @@ int main(int argc, char *argv[])
 //    QString file = "Журнальный стол";
 //    Item item(dir, file);
 
-//    matrix A =
-//    {
-//        {1, 2, 3},
-//        {4, 5, 6},
-//        {7, 8, 9}
-//    };
-//    matrix B =
-//    {
-//        {1, 2, 3},
-//        {4, 5, 6},
-//        {7, 8, 9}
-//    };
-//    matrix C =
-//    {
-//        {1},
-//        {2},
-//        {3}
-//    };
-//    matrix D =
-//    {
-//        {1, 2, 3, 4}
-//    };
-//    item.multiplyMatrix(A, B);
-//    item.multiplyMatrix(A, C);
-//    item.multiplyMatrix(A, D);
+//    item.RotateOY(90);
+//    item.Move(10, -10, 100);
 
     QApplication a(argc, argv);
     MainWindow w;

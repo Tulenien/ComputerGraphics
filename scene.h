@@ -15,17 +15,16 @@ public:
     QImage *image;
     Scene(QWidget *parent);
     void addItem(QString dir, QString item);
-    void setWidth(qreal width);
-    void setLength(qreal length);
-    void setHeight(qreal height);
-    qreal getWidth();
-    qreal getLength();
-    qreal getHeight();
-    void rotate(qreal angleX, qreal angleY);
+    void setSize(double &width, double &length, double &height);
+    double getWidth();
+    double getLength();
+    double getHeight();
+    // Add Rotation on OX and OY separately
+    //void rotateOX(qreal angleX, qreal angleY);
     void render();
 
 private:
-    qreal width, length, height;
+    double width, length, height;
     QImage *buffer;
     QVector<Item> items;
     void transform(qreal distance);
