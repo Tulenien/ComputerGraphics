@@ -83,9 +83,14 @@ void Settings::sceneSizeChanged()
 
 void Settings::openItemMenu(QListWidgetItem *item)
 {
-    itemMenu *menu = new itemMenu();
+    // Change item in window if it exists
+    if (!imenu)
+    {
+        imenu = new itemMenu();
+        imenu->setScene(this->scene);
+    }
     // Set index of item in Scene's QList of Items
-    menu->setCurrentIndex(ui->ItemListWdt->row(item));
-    menu->setWindowTitle(item->text());
-    menu->show();
+    imenu->setCurrentIndex(ui->ItemListWdt->row(item));
+    imenu->setWindowTitle(item->text());
+    imenu->show();
 }

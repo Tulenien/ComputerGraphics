@@ -22,6 +22,7 @@ public:
     // Add Rotation on OX and OY separately
     //void rotateOX(qreal angleX, qreal angleY);
     void render();
+    Item &getItemByIndex(int index);
 
 private:
     double width, length, height;

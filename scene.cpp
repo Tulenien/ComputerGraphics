@@ -49,3 +49,8 @@ void Scene::setSize(double &width, double &length, double &height)
         items[i].setToFloor(offset);
     }
 }
+
+Item &Scene::getItemByIndex(int index)
+{
+    return items[index];
+}

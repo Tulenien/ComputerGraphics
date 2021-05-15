@@ -22,7 +22,8 @@ class Settings : public QWidget
 public:
     explicit Settings(QWidget *parent = nullptr);
     ~Settings();
-    Scene *scene;
+    Scene *scene = nullptr;
+    itemMenu *imenu = nullptr;
 
 private:
     Ui::Settings *ui;
