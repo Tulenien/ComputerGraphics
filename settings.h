@@ -1,11 +1,8 @@
 ﻿#ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <QDebug>
 #include <QWidget>
-#include <iostream>
 #include <QTreeWidget>
-#include <QTreeWidgetItem>
 #include <QListWidget>
 #include <QFileSystemModel>
 #include "scene.h"
@@ -31,7 +28,7 @@ private:
     void loadItemCatalog(const QString &);
 
 private slots:
-    void AddItems();
+    void addItems();
     void sceneSizeChanged();
     void openItemMenu(QListWidgetItem *item);
 };

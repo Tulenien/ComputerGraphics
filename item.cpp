@@ -6,6 +6,196 @@ Item::Item(QString dir, QString file)
     loadObj(dir, file);
 }
 
+bool Item::multiplyMatrix(matrix &A, const matrix &B)
+{
+    // Rewrites result in matrix A
+    bool status = true;
+    // Standart multiplication algorithm
+    std::size_t rows = A.size();
+    std::size_t cols = B[0].size();
+    std::size_t nest = B.size();
+    if (A[0].size() != nest) status = false;
+    else
+    {
+        matrix temp;
+        for (std::size_t i = 0; i < rows; i++)
+        {
+            std::vector<double> row(cols);
+            for (std::size_t j = 0; j < cols; j++)
+            {
+                for (std::size_t k = 0; k < nest; k++)
+                {
+                    row[j] += A[i][k] * B[k][j];
+                }
+            }
+            temp.push_back(row);
+        }
+        A.clear();
+        for (std::size_t i = 0; i < rows; i++)
+        {
+            A.push_back(temp[i]);
+        }
+    }
+    return status;
+}
+
+bool Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
+{
+    // Writes result in matrix C
+    bool status = true;
+    // Standart multiplication algorithm
+    std::size_t rows = A.size();
+    std::size_t cols = B[0].size();
+    std::size_t nest = B.size();
+    if (A[0].size() != nest) status = false;
+    else
+    {
+        for (std::size_t i = 0; i < rows; i++)
+        {
+            std::vector<double> row(cols);
+            for (std::size_t j = 0; j < cols; j++)
+            {
+                for (std::size_t k = 0; k < nest; k++)
+                {
+                    row[j] += A[i][k] * B[k][j];
+                }
+            }
+            C.push_back(row);
+        }
+    }
+    return status;
+}
+
+void Item::rotateOX(double angleOX)
+{
+    double radAngle = angleOX * PI / 180.;
+    const matrix rotate =
+    {
+        {1, 0, 0, 0},
+        {0, cos(radAngle), sin(radAngle), 0},
+        {0, -sin(radAngle), cos(radAngle), 0},
+        {0, 0, 0, 1}
+    };
+    if(transform.empty())
+    {
+        for (std::size_t i = 0; i < 4; i++)
+        {
+            transform.push_back(rotate[i]);
+        }
+    }
+    else multiplyMatrix(transform, rotate);
+    // Multiply [vOriginal][transform] and show the result on screen
+}
+
+void Item::rotateOY(double angle)
+{
+    double radAngle = angle * PI / 180.;
+    const matrix rotate =
+    {
+        {cos(radAngle), 0, -sin(radAngle), 0},
+        {0, 1, 0, 0},
+        {sin(radAngle), 0, cos(radAngle), 0},
+        {0, 0, 0, 1}
+    };
+    if(transform.empty())
+    {
+        for (std::size_t i = 0; i < 4; i++)
+        {
+                transform.push_back(rotate[i]);
+        }
+    }
+    else multiplyMatrix(transform, rotate);
+    // Multiply [vOriginal][transform] and show the result on screen
+}
+
+void Item::move(double x, double y, double z)
+{
+    matrix move =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {x, y, z, 1}
+    };
+    if(transform.empty())
+    {
+        for (std::size_t i = 0; i < 4; i++)
+        {
+                transform.push_back(move[i]);
+        }
+    }
+    else multiplyMatrix(transform, move);
+    // Multiply [vOriginal][transform] and show the result on screen
+}
+
+void Item::setToFloor(double height)
+{
+    toFloor = height;
+}
+
+point_t Item::centerXZ()
+{
+    // Find min and max coordinates of x and z
+    double minX = vOriginal[0][0], maxX = vOriginal[0][0];
+    double minZ = vOriginal[0][2], maxZ = vOriginal[0][2];
+    // If only one point --> crash
+    for (std::size_t i = 1; i < vOriginal.size(); i++)
+    {
+        double currentX = vOriginal[i][0];
+        double currentZ = vOriginal[i][2];
+        if (currentX > maxX) maxX = currentX;
+        else if (currentX < minX) minX = currentX;
+        if (currentZ > maxZ) maxZ = currentZ;
+        else if (currentZ < minZ) minZ = currentZ;
+    }
+    point_t center =
+    {
+        (minX + maxX) * 0.5,
+        0,
+        (minZ + maxZ) * 0.5
+    };
+    return center;
+}
+
+void Item::spin(double angle)
+{
+    // Rotate item around its local OY axis
+    double radAngle = angle * PI / 180.;
+    point_t center = centerXZ();
+    const matrix T =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {-center.x, 0, -center.z, 1}
+    };
+    const matrix rotate =
+    {
+        {cos(radAngle), 0, -sin(radAngle), 0},
+        {0, 1, 0, 0},
+        {sin(radAngle), 0, cos(radAngle), 0},
+        {0, 0, 0, 1}
+    };
+    const matrix antiT =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {center.x, 0, center.z, 1}
+    };
+    if(transform.empty())
+    {
+        for (std::size_t i = 0; i < 4; i++)
+        {
+            transform.push_back(T[i]);
+        }
+    }
+    else multiplyMatrix(transform, T);
+    multiplyMatrix(transform, rotate);
+    multiplyMatrix(transform, antiT);
+    // Multiply [vOriginal][transform] and show the result on screen
+}
+
 void Item::loadObj(const QString dir, const QString file)
 {
     QString path = dir + "/" + file + ".obj";
@@ -183,201 +373,4 @@ void Item::loadMtl(const QString path)
         }
     }
     mtlFile.close();
-}
-
-bool Item::multiplyMatrix(matrix &A, const matrix &B)
-{
-    bool status = true;
-    // Standart multiplication algorithm
-    std::size_t rows = A.size();
-    std::size_t cols = B[0].size();
-    std::size_t nest = B.size();
-    if (A[0].size() != nest) status = false;
-    else
-    {
-        matrix temp;
-        for (std::size_t i = 0; i < rows; i++)
-        {
-            std::vector<double> row(cols);
-            for (std::size_t j = 0; j < cols; j++)
-            {
-                for (std::size_t k = 0; k < nest; k++)
-                {
-                    row[j] += A[i][k] * B[k][j];
-                }
-            }
-            temp.push_back(row);
-        }
-        A.clear();
-        for (std::size_t i = 0; i < rows; i++)
-        {
-            A.push_back(temp[i]);
-        }
-    }
-    return status;
-}
-
-void Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
-{
-    // No size-check, result saved in C
-    // Standart multiplication algorithm
-    std::size_t rows = A.size();
-    std::size_t cols = B[0].size();
-    std::size_t nest = B.size();
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        std::vector<double> row(cols);
-        for (std::size_t j = 0; j < cols; j++)
-        {
-            for (std::size_t k = 0; k < nest; k++)
-            {
-                row[j] += A[i][k] * B[k][j];
-            }
-        }
-        C.push_back(row);
-    }
-}
-
-/*void Item::RotateOX(double angleOX)
-//{
-//    // Angle must be inversed:
-//    // cosine of negative number is the same
-//    // as cosine of positive one
-//    // negative sine of negative number
-//    // is the same as sine of this positive number
-//    // Angle in radians
-//    double radAngle = angleOX * PI / 180.;
-//    const matrix rotate =
-//    {
-//        {1, 0, 0, 0},
-//        {0, cos(radAngle), sin(radAngle), 0},
-//        {0, sin(-radAngle), cos(radAngle), 0},
-//        {0, 0, 0, 1}
-//    };
-//    if(transform.empty())
-//    {
-//        for (std::size_t i = 0; i < 4; i++)
-//        {
-//            transform.push_back(rotate[i]);
-//        }
-//    }
-//    else multiplyMatrix(transform, rotate);
-//    // points and normals changed from original state to last change
-//    multiplyMatrix(vOriginal, transform, vShifted);
-//    multiplyMatrix(nOriginal, transform, nShifted);
-//}*/
-
-void Item::RotateOY(double angle)
-{
-    // Angle in radians
-    double radAngle = angle * PI / 180.;
-    const matrix rotate =
-    {
-        {cos(radAngle), 0, -sin(radAngle), 0},
-        {0, 1, 0, 0},
-        {sin(radAngle), 0, cos(radAngle), 0},
-        {0, 0, 0, 1}
-    };
-    if(transform.empty())
-    {
-        for (std::size_t i = 0; i < 4; i++)
-        {
-                transform.push_back(rotate[i]);
-        }
-    }
-    else multiplyMatrix(transform, rotate);
-    // points and normals changed from original state to last change
-    multiplyMatrix(vOriginal, transform, vShifted);
-    multiplyMatrix(nOriginal, transform, nShifted);
-}
-
-void Item::Move(double x, double y, double z)
-{
-    matrix move =
-    {
-        {1, 0, 0, 0},
-        {0, 1, 0, 0},
-        {0, 0, 1, 0},
-        {x, y, z, 1}
-    };
-    if(transform.empty())
-    {
-        for (std::size_t i = 0; i < 4; i++)
-        {
-                transform.push_back(move[i]);
-        }
-    }
-    else multiplyMatrix(transform, move);
-    // points and normals changed from original state to last change
-    multiplyMatrix(vOriginal, transform, vShifted);
-    multiplyMatrix(nOriginal, transform, nShifted);
-}
-
-void Item::setToFloor(double height)
-{
-    toFloor = height;
-}
-
-point_t Item::CenterXZ()
-{
-    // Find min and max coordinates of x and z
-    double minX = vOriginal[0][0], maxX = vOriginal[0][0];
-    double minZ = vOriginal[0][2], maxZ = vOriginal[0][2];
-    // If only one point --> crash
-    for (std::size_t i = 1; i < vOriginal.size(); i++)
-    {
-        double currentX = vOriginal[i][0];
-        double currentZ = vOriginal[i][2];
-        if (currentX > maxX) maxX = currentX;
-        else if (currentX < minX) minX = currentX;
-        if (currentZ > maxZ) maxZ = currentZ;
-        else if (currentZ < minZ) minZ = currentZ;
-    }
-    // -x, 0, -z --> OY axis coordinates
-    point_t center =
-    {
-        (minX + maxX) * 0.5,
-        0,
-        (minZ + maxZ) * 0.5
-    };
-    return center;
-}
-
-void Item::Spin(double angle)
-{
-    double radAngle = angle * PI / 180.;
-    point_t center = CenterXZ();
-    const matrix T =
-    {
-        {1, 0, 0, 0},
-        {0, 1, 0, 0},
-        {0, 0, 1, 0},
-        {-center.x, 0, -center.z, 1}
-    };
-    const matrix rotate =
-    {
-        {cos(radAngle), 0, -sin(radAngle), 0},
-        {0, 1, 0, 0},
-        {sin(radAngle), 0, cos(radAngle), 0},
-        {0, 0, 0, 1}
-    };
-    const matrix antiT =
-    {
-        {1, 0, 0, 0},
-        {0, 1, 0, 0},
-        {0, 0, 1, 0},
-        {center.x, 0, center.z, 1}
-    };
-    if(transform.empty())
-    {
-        for (std::size_t i = 0; i < 4; i++)
-        {
-            transform.push_back(T[i]);
-        }
-    }
-    else multiplyMatrix(transform, T);
-    multiplyMatrix(transform, rotate);
-    multiplyMatrix(transform, antiT);
-    multiplyMatrix(vOriginal, transform, vShifted);
-    multiplyMatrix(nOriginal, transform, nShifted);
 }

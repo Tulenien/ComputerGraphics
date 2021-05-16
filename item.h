@@ -27,7 +27,12 @@ struct polygon
     int textures[3];
 };
 
-struct rgbColor{ double red, green, blue;};
+struct rgbColor
+{
+    double red;
+    double green;
+    double blue;
+};
 
 struct material
 {
@@ -44,52 +49,40 @@ class Item
 public:
     Item(QString dir, QString file);
     // Get item center
-    point_t CenterXZ();
+    point_t centerXZ();
     // If height changes -- change item offset to reach floor on scene
     void setToFloor(double height);
-    void Move(double x, double y, double z);
-    // Rotate with scene: center always (0, 0, 0)
-    void RotateOY(double angle);
-    // Rotate item separately: need center
-    // Only around OY: find max-min X, max-min Z, find average
-    void Spin(double angle);
 
-    // Temporary in public. Hide realization after test
-    // Matrix operations functions
-    // Returns False if sizes are wrong, rewrites results in A
-    bool multiplyMatrix(matrix &A, const matrix &B);
-    // Returns Copy of matrix in C
-    void multiplyMatrix(const matrix &A, const matrix &B, matrix &C);
+    void move(double x, double y, double z);
+    // Rotate with scene
+    void rotateOY(double angle);
+    void rotateOX(double angle);
+    void spin(double angle);
+    // TODO: use minPoint, maxPoint
+    void getBorder();
 
 private:
     // To check collisions with other point
     point_t minPoint, maxPoint;
-    void getBorder();
-
-    // Change y-coordinate to put item on floor
     double toFloor;
     // Starting points matrix
     matrix vOriginal, nOriginal;
-    // Matrix to save operations of shift and rotate
-    // Able to change Items positions
+    /* Matrix to save all operations on original matrix:
+     * scene rotation
+     * item spin
+     * item move (x, y, z)
+    */
     matrix transform;
-    // Matrix to save after transformation for further do
-    matrix vShifted, nShifted;
-    // Matrix to save coordinates on scene and to rotate
-    // For rotating scene only
-    matrix vScene, nScene;
-    // Not able to move/rotate nor items nor scene
     matrix vPerspective, nPerspective;
-    // Textures, not changed
     matrix textures;
-    // TODO: Add matrix to store transformations
 
-    // Load .obj file, call loadMtl from inside
+    // Change y-coordinate to put item on floor
+    bool multiplyMatrix(matrix &A, const matrix &B);
+    bool multiplyMatrix(const matrix &A, const matrix &B, matrix &C);
+
     void loadObj(const QString dir, const QString file);
-    // Read from .mtl file
     QMap<QString, material> materialMap;
     void loadMtl(const QString path);
-
     QList<polygon> polygons;
 };
 

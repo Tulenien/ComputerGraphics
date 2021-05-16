@@ -15,7 +15,7 @@ Settings::Settings(QWidget *parent) :
     ui->heightField->setValidator(&verticalValidator);
     ui->lengthField->setValidator(&horizontalValidator);
     ui->widthField->setValidator(&horizontalValidator);
-    connect(ui->addItemsButton, &QPushButton::released, this, &Settings::AddItems);
+    connect(ui->addItemsButton, &QPushButton::released, this, &Settings::addItems);
     connect(ui->setSceneSize, &QPushButton::released, this, &Settings::sceneSizeChanged);
     connect(ui->ItemListWdt, &QListWidget::itemDoubleClicked, this, &Settings::openItemMenu);
 }
@@ -47,7 +47,7 @@ void Settings::loadItemCatalog(const QString &catalogPath)
     }
 }
 
-void Settings::AddItems()
+void Settings::addItems()
 {
     for (int i = 0; i < ui->itemCatalogWdt->topLevelItemCount(); i++)
     {

@@ -54,3 +54,13 @@ Item &Scene::getItemByIndex(int index)
 {
     return items[index];
 }
+
+void Scene::rotateSceneOX(double angle)
+{
+    for (int i = 0; i < items.size(); i++) items[i].rotateOX(angle);
+}
+
+void Scene::rotateSceneOY(double angle)
+{
+    for (int i = 0; i < items.size(); i++) items[i].rotateOY(angle);
+}

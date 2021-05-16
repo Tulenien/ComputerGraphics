@@ -2,34 +2,37 @@
 #define SCENE_H
 
 #include <QLabel>
-#include <QDebug>
 #include "item.h"
-// Add ZBuffer and
-// find the way to change it whenever object rotate
 
+/*TODO:
+ * Add Perspective transformation
+ * Add Camera
+ * Add ZBuffer Structure
+ * Add ZBuffer Algorithm
+ * Add 3D Clipping method
+*/
 
 class Scene : public QLabel
 {
     Q_OBJECT
 public:
-    QImage *image;
     Scene(QWidget *parent);
     void addItem(QString dir, QString item);
     void setSize(double &width, double &length, double &height);
     double getWidth();
     double getLength();
     double getHeight();
-    // Add Rotation on OX and OY separately
-    //void rotateOX(qreal angleX, qreal angleY);
+    // Add rotation
+    void rotateSceneOX(double angle);
+    void rotateSceneOY(double angle);
+    // Incapsulates all transformations and Zbuffer
     void render();
     Item &getItemByIndex(int index);
 
 private:
-    double width, length, height;
-    QImage *buffer;
+    QImage *image;
     QVector<Item> items;
-    void transform(qreal distance);
-    void draw();
+    double width, length, height;
 };
 
 #endif // SCENE_H
