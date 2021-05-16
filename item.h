@@ -43,15 +43,16 @@ class Item
 {
 public:
     Item(QString dir, QString file);
-    //~Item();
-    point_t Center();
+    // Get item center
+    point_t CenterXZ();
+    // If height changes -- change item offset to reach floor on scene
     void setToFloor(double height);
     void Move(double x, double y, double z);
-    // Rotate Item around
-    void Spin(double angleOY);
     // Rotate with scene: center always (0, 0, 0)
-    //void Rotate(double angleOX, double angleOY);
     void RotateOY(double angle);
+    // Rotate item separately: need center
+    // Only around OY: find max-min X, max-min Z, find average
+    void Spin(double angle);
 
     // Temporary in public. Hide realization after test
     // Matrix operations functions

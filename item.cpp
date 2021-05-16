@@ -317,3 +317,67 @@ void Item::setToFloor(double height)
 {
     toFloor = height;
 }
+
+point_t Item::CenterXZ()
+{
+    // Find min and max coordinates of x and z
+    double minX = vOriginal[0][0], maxX = vOriginal[0][0];
+    double minZ = vOriginal[0][2], maxZ = vOriginal[0][2];
+    // If only one point --> crash
+    for (std::size_t i = 1; i < vOriginal.size(); i++)
+    {
+        double currentX = vOriginal[i][0];
+        double currentZ = vOriginal[i][2];
+        if (currentX > maxX) maxX = currentX;
+        else if (currentX < minX) minX = currentX;
+        if (currentZ > maxZ) maxZ = currentZ;
+        else if (currentZ < minZ) minZ = currentZ;
+    }
+    // -x, 0, -z --> OY axis coordinates
+    point_t center =
+    {
+        (minX + maxX) * 0.5,
+        0,
+        (minZ + maxZ) * 0.5
+    };
+    return center;
+}
+
+void Item::Spin(double angle)
+{
+    double radAngle = angle * PI / 180.;
+    point_t center = CenterXZ();
+    const matrix T =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {-center.x, 0, -center.z, 1}
+    };
+    const matrix rotate =
+    {
+        {cos(radAngle), 0, -sin(radAngle), 0},
+        {0, 1, 0, 0},
+        {sin(radAngle), 0, cos(radAngle), 0},
+        {0, 0, 0, 1}
+    };
+    const matrix antiT =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {center.x, 0, center.z, 1}
+    };
+    if(transform.empty())
+    {
+        for (std::size_t i = 0; i < 4; i++)
+        {
+            transform.push_back(T[i]);
+        }
+    }
+    else multiplyMatrix(transform, T);
+    multiplyMatrix(transform, rotate);
+    multiplyMatrix(transform, antiT);
+    multiplyMatrix(vOriginal, transform, vShifted);
+    multiplyMatrix(nOriginal, transform, nShifted);
+}
