@@ -15,6 +15,8 @@ Scene::Scene(QWidget *parent)
         image->setPixel(i, j, line_color.rgba());
     }
     this->setPixmap(QPixmap::fromImage(*image));
+    // Camera setup: fovX, fovY, focalLength, near, far
+    cam = {90, 90, 35, 0.1, 100};
 }
 
 void Scene::addItem(QString dir, QString item)
@@ -63,4 +65,22 @@ void Scene::rotateSceneOX(double angle)
 void Scene::rotateSceneOY(double angle)
 {
     for (int i = 0; i < items.size(); i++) items[i].rotateOY(angle);
+}
+
+void Scene::projectScene()
+{
+    double scaleX = 1;  //1 / tanh(cam.fovX * 0.5 * PI / 180);
+    double scaleY = 1;  //1 / tanh(cam.fovY * 0.5 * PI / 180);
+    double coeff = 1 / cam.far - cam.near;
+    const matrix projection =
+    {
+        {scaleX, 0, 0, 0},
+        {0, scaleY, 0, 0},
+        {0, 0, -cam.far * coeff, -1},
+        {0, 0, -cam.far * cam.near * coeff, 0}
+    };
+    for (int i = 0; i < items.size(); i++)
+    {
+        items[0].project(projection);
+    }
 }

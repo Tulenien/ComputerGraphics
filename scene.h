@@ -12,6 +12,20 @@
  * Add 3D Clipping method
 */
 
+struct camera
+{
+    /* Needed for image scaling:
+     * Field of View - angle between sides of camera view
+     * Focal length - distance from camera point to far clipping plane
+    */
+    double fovX;
+    double fovY;
+    double focalLength;
+    // Near and far clipping planes
+    double near;
+    double far;
+};
+
 class Scene : public QLabel
 {
     Q_OBJECT
@@ -30,6 +44,7 @@ public:
     Item &getItemByIndex(int index);
 
 private:
+    camera cam;
     QImage *image;
     QVector<Item> items;
     double width, length, height;

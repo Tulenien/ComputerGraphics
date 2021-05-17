@@ -81,8 +81,8 @@ private:
     bool multiplyMatrix(const matrix &A, const matrix &B, matrix &C);
 
     void loadObj(const QString dir, const QString file);
-    QMap<QString, material> materialMap;
     void loadMtl(const QString path);
+    QMap<QString, material> materialMap;
     QList<polygon> polygons;
 };
 

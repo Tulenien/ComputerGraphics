@@ -374,3 +374,15 @@ void Item::loadMtl(const QString path)
     }
     mtlFile.close();
 }
+
+void Item::project(const matrix &projection)
+{
+    /* Projects points and normals,
+       result stored in v(n)Perspective matrix
+    */
+    matrix vCurrent, nCurrent;
+    multiplyMatrix(vOriginal, transform, vCurrent);
+    multiplyMatrix(nOriginal, transform, nCurrent);
+    multiplyMatrix(vCurrent, projection, vPerspective);
+    multiplyMatrix(nCurrent, projection, nPerspective);
+}
