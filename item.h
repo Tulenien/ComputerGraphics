@@ -58,6 +58,8 @@ public:
     void rotateOY(double angle);
     void rotateOX(double angle);
     void spin(double angle);
+    // Projection
+    void project(const matrix &projection);
     // TODO: use minPoint, maxPoint
     void getBorder();
 

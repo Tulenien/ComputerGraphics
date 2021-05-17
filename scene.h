@@ -41,6 +41,8 @@ public:
     void rotateSceneOY(double angle);
     // Incapsulates all transformations and Zbuffer
     void render();
+    // Then included in render method:
+    void projectScene();
     Item &getItemByIndex(int index);
 
 private:
