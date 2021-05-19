@@ -13,14 +13,18 @@ Scene::Scene(QWidget *parent)
     // Camera setup: fovX, fovY, focalLength, near, far
     cam = {90, 90, 35, 0.1, 100};
     // Set depth buffer's size equal to QImage size
-    for (std::size_t i = 0; i < image->size().height(); i++)
+    for (int i = 0; i < image->size().height(); i++)
     {
         std::vector<double> temp;
-        for (std::size_t j = 0; j < image->size().width(); j++)
+        for (int j = 0; j < image->size().width(); j++)
         {
             temp.push_back(Q_INFINITY);
         }
         depthBuffer.push_back(temp);
+    }
+    for (int i = 0; i < items.size(); i++)
+    {
+        items[i].setDepthBuffer(&depthBuffer);
     }
 }
 

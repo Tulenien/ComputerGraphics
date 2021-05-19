@@ -52,6 +52,7 @@ public:
     point_t centerXZ();
     // If height changes -- change item offset to reach floor on scene
     void setToFloor(double height);
+    void setDepthBuffer(matrix *depthBuffer);
 
     void move(double x, double y, double z);
     // Rotate with scene
@@ -78,6 +79,7 @@ private:
     matrix transform;
     matrix vPerspective, nPerspective;
     matrix textures;
+    matrix *depthBuffer = nullptr;
 
     // Change y-coordinate to put item on floor
     bool multiplyMatrix(matrix &A, const matrix &B);

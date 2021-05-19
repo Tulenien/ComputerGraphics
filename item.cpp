@@ -6,6 +6,11 @@ Item::Item(QString dir, QString file)
     loadObj(dir, file);
 }
 
+void Item::setDepthBuffer(matrix *&depthBuffer)
+{
+    this->depthBuffer = depthBuffer;
+}
+
 bool Item::multiplyMatrix(matrix &A, const matrix &B)
 {
     // Rewrites result in matrix A
