@@ -60,6 +60,7 @@ public:
     void spin(double angle);
     // Projection
     void project(const matrix &projection);
+    void normalise(const int imageHeight, const int imageWidth);
     // TODO: use minPoint, maxPoint
     void getBorder();
 

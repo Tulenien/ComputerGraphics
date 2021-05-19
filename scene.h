@@ -5,9 +5,6 @@
 #include "item.h"
 
 /*TODO:
- * Add Perspective transformation
- * Add Camera
- * Add ZBuffer Structure
  * Add ZBuffer Algorithm
  * Add 3D Clipping method
 */
@@ -39,16 +36,19 @@ public:
     // Add rotation
     void rotateSceneOX(double angle);
     void rotateSceneOY(double angle);
+    Item &getItemByIndex(int index);
     // Incapsulates all transformations and Zbuffer
     void render();
     // Then included in render method:
     void projectScene();
-    Item &getItemByIndex(int index);
+    // To NDC coordinates
+    void normaliseScene();
 
 private:
     camera cam;
     QImage *image;
     QVector<Item> items;
+    matrix depthBuffer;
     double width, length, height;
 };
 

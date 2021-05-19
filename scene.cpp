@@ -6,17 +6,22 @@ Scene::Scene(QWidget *parent)
     length = 200;
     height = 250;
     QSize size = this->size();
-    qDebug() << size;
+    //qDebug() << size; // 640x480
     image = new QImage(size, QImage::Format_RGBA8888);
-    QColor line_color(0, 0, 0);
-    for(int i = 0; i < size.width(); i++)
-    {
-        for(int j = 0; j < size.height(); j++)
-        image->setPixel(i, j, line_color.rgba());
-    }
+    image->fill(QColor(0, 0, 0));
     this->setPixmap(QPixmap::fromImage(*image));
     // Camera setup: fovX, fovY, focalLength, near, far
     cam = {90, 90, 35, 0.1, 100};
+    // Set depth buffer's size equal to QImage size
+    for (std::size_t i = 0; i < image->size().height(); i++)
+    {
+        std::vector<double> temp;
+        for (std::size_t j = 0; j < image->size().width(); j++)
+        {
+            temp.push_back(Q_INFINITY);
+        }
+        depthBuffer.push_back(temp);
+    }
 }
 
 void Scene::addItem(QString dir, QString item)
@@ -82,5 +87,14 @@ void Scene::projectScene()
     for (int i = 0; i < items.size(); i++)
     {
         items[0].project(projection);
+    }
+}
+
+void Scene::normaliseScene()
+{
+    // Working with projected points
+    for (int i = 0; i < items.size(); i++)
+    {
+        items[0].normalise(image->size().height(), image->size().width());
     }
 }

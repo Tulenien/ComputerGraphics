@@ -386,3 +386,18 @@ void Item::project(const matrix &projection)
     multiplyMatrix(vCurrent, projection, vPerspective);
     multiplyMatrix(nCurrent, projection, nPerspective);
 }
+
+void Item::normalise(const int imageHeight, const int imageWidth)
+{
+    // Normalise and convert to raster (add conversion to int later)
+    for (std::size_t i = 0; i < vPerspective.size(); i++)
+    {
+        vPerspective[i][0] = (vPerspective[i][0] + 1) * 0.5 * imageWidth;
+        vPerspective[i][1] = (1 - vPerspective[i][1]) * 0.5 * imageHeight;
+    }
+    for (std::size_t i = 0; i < nPerspective.size(); i++)
+    {
+        nPerspective[i][0] = (nPerspective[i][0] + 1) * 0.5 * imageWidth;
+        nPerspective[i][1] = (1 - nPerspective[i][1]) * 0.5 * imageHeight;
+    }
+}
