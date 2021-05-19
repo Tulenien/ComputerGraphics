@@ -53,6 +53,7 @@ public:
     // If height changes -- change item offset to reach floor on scene
     void setToFloor(double height);
     void setDepthBuffer(matrix *depthBuffer);
+    void setImage(QImage *&image);
 
     void move(double x, double y, double z);
     // Rotate with scene
@@ -80,6 +81,7 @@ private:
     matrix vPerspective, nPerspective;
     matrix textures;
     matrix *depthBuffer = nullptr;
+    QImage *image = nullptr;
 
     // Change y-coordinate to put item on floor
     bool multiplyMatrix(matrix &A, const matrix &B);

@@ -25,6 +25,7 @@ Scene::Scene(QWidget *parent)
     for (int i = 0; i < items.size(); i++)
     {
         items[i].setDepthBuffer(&depthBuffer);
+        items[i].setImage(image);
     }
 }
 

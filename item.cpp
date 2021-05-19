@@ -6,9 +6,14 @@ Item::Item(QString dir, QString file)
     loadObj(dir, file);
 }
 
-void Item::setDepthBuffer(matrix *&depthBuffer)
+void Item::setDepthBuffer(matrix *depthBuffer)
 {
     this->depthBuffer = depthBuffer;
+}
+
+void Item::setImage(QImage *&image)
+{
+    this->image = image;
 }
 
 bool Item::multiplyMatrix(matrix &A, const matrix &B)
