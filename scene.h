@@ -5,7 +5,9 @@
 #include "item.h"
 
 /*TODO:
- * Add ZBuffer Algorithm
+ * Add button to Show rendered
+ * Add Update function
+ * Put all methods of render into 'render'
  * Add 3D Clipping method
 */
 
@@ -33,9 +35,6 @@ public:
     double getWidth();
     double getLength();
     double getHeight();
-    double getDepthBufferElement(size_t i, size_t j);
-    void setDepthBufferElement(size_t i, size_t j, double element);
-    void setImageElement(int i, int j, QColor color);
     // Add rotation
     void rotateSceneOX(double angle);
     void rotateSceneOY(double angle);

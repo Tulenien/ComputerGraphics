@@ -133,6 +133,16 @@ void Item::setToFloor(double height)
     toFloor = height;
 }
 
+void Item::setDepthBuffer(matrix *depthBuffer)
+{
+    this->depthBuffer = depthBuffer;
+}
+
+void Item::setImage(QImage *&image)
+{
+    this->image = image;
+}
+
 point_t Item::centerXZ()
 {
     // Find min and max coordinates of x and z
@@ -402,7 +412,7 @@ void Item::normalise(const int imageHeight, const int imageWidth)
     }
 }
 
-void Item::rasterise(const int imageHeight, const int imageWidth)
+void Item::rasterise()
 {
     // Go through all polygons and scan them with z-buffer
     for (int i = 0; i < polygons.size(); i++)
@@ -497,13 +507,12 @@ void Item::rasterise(const int imageHeight, const int imageWidth)
             for (int x = xa; x < xb; x++)
             {
                 double z = za + (zb - za) * (x - xa) * 1 / (xb - xa);
-//                if (scene->getDepthBufferElement(y, x) > z)
-//                {
-//                    scene->setDepthBufferElement(y, x, z);
-//                    scene->setImageElement(y, x, materialMap[polygons[i].materialKey].ka);
-//                }
+                if ((*depthBuffer)[y][x] > z)
+                {
+                    (*depthBuffer)[y][x] = z;
+                    image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                }
             }
         }
-
     }
 }

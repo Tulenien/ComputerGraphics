@@ -1,11 +1,12 @@
 ﻿#ifndef ITEM_H
 #define ITEM_H
 
-#include <vector>
-#include <QFile>
-#include <QDebug>
 #include <cmath>
+#include <QFile>
+#include <vector>
 #include <QColor>
+#include <QDebug>
+#include <QImage>
 
 
 #define PI 3.14159265
@@ -54,6 +55,8 @@ public:
     point_t centerXZ();
     // If height changes -- change item offset to reach floor on scene
     void setToFloor(double height);
+    void setDepthBuffer(matrix *depthBuffer);
+    void setImage(QImage *&image);
 
     void move(double x, double y, double z);
     // Rotate with scene
@@ -63,7 +66,7 @@ public:
     // Projection
     void project(const matrix &projection);
     void normalise(const int imageHeight, const int imageWidth);
-    void rasterise(const int imageHeight, const int imageWidth);
+    void rasterise();
     // TODO: use minPoint, maxPoint
     void getBorder();
 
@@ -81,6 +84,10 @@ private:
     matrix transform;
     matrix vPerspective, nPerspective;
     matrix textures;
+
+    // Originated in Scene
+    matrix *depthBuffer;
+    QImage *image;
 
     // Change y-coordinate to put item on floor
     bool multiplyMatrix(matrix &A, const matrix &B);
