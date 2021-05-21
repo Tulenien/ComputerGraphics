@@ -33,6 +33,9 @@ public:
     double getWidth();
     double getLength();
     double getHeight();
+    double getDepthBufferElement(size_t i, size_t j);
+    void setDepthBufferElement(size_t i, size_t j, double element);
+    void setImageElement(int i, int j, QColor color);
     // Add rotation
     void rotateSceneOX(double angle);
     void rotateSceneOY(double angle);
@@ -43,6 +46,7 @@ public:
     void projectScene();
     // To NDC coordinates
     void normaliseScene();
+    void rasteriseScene();
 
 private:
     camera cam;

@@ -22,11 +22,6 @@ Scene::Scene(QWidget *parent)
         }
         depthBuffer.push_back(temp);
     }
-    for (int i = 0; i < items.size(); i++)
-    {
-        items[i].setDepthBuffer(&depthBuffer);
-        items[i].setImage(image);
-    }
 }
 
 void Scene::addItem(QString dir, QString item)
@@ -48,6 +43,21 @@ double Scene::getLength()
 double Scene::getHeight()
 {
     return height;
+}
+
+double Scene::getDepthBufferElement(size_t i, size_t j)
+{
+    return depthBuffer[i][j];
+}
+
+void Scene::setDepthBufferElement(size_t i, size_t j, double element)
+{
+    depthBuffer[i][j] = element;
+}
+
+void Scene::setImageElement(int i, int j, QColor color)
+{
+    image->setPixelColor(i, j, color);
 }
 
 void Scene::setSize(double &width, double &length, double &height)
@@ -101,5 +111,13 @@ void Scene::normaliseScene()
     for (int i = 0; i < items.size(); i++)
     {
         items[0].normalise(image->size().height(), image->size().width());
+    }
+}
+
+void Scene::rasteriseScene()
+{
+    for (int i = 0; i < items.size(); i++)
+    {
+        items[0].rasterise(image->size().height(), image->size().width());
     }
 }

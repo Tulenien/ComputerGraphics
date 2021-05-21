@@ -6,16 +6,6 @@ Item::Item(QString dir, QString file)
     loadObj(dir, file);
 }
 
-void Item::setDepthBuffer(matrix *depthBuffer)
-{
-    this->depthBuffer = depthBuffer;
-}
-
-void Item::setImage(QImage *&image)
-{
-    this->image = image;
-}
-
 bool Item::multiplyMatrix(matrix &A, const matrix &B)
 {
     // Rewrites result in matrix A
@@ -279,19 +269,19 @@ void Item::loadObj(const QString dir, const QString file)
                     // Material, points, normals, textures
                     currentMaterial,
                     {
-                        polygonP1[0].toInt() - 1,
-                        polygonP2[0].toInt() - 1,
-                        polygonP3[0].toInt() - 1,
+                        polygonP1[0].toULongLong() - 1,
+                        polygonP2[0].toULongLong() - 1,
+                        polygonP3[0].toULongLong() - 1,
                     },
                     {
-                        polygonP1[2].toInt() - 1,
-                        polygonP2[2].toInt() - 1,
-                        polygonP3[2].toInt() - 1,
+                        polygonP1[2].toULongLong() - 1,
+                        polygonP2[2].toULongLong() - 1,
+                        polygonP3[2].toULongLong() - 1,
                     },
                     {
-                        polygonP1[1].toInt() - 1,
-                        polygonP2[1].toInt() - 1,
-                        polygonP3[1].toInt() - 1,
+                        polygonP1[1].toULongLong() - 1,
+                        polygonP2[1].toULongLong() - 1,
+                        polygonP3[1].toULongLong() - 1,
                     }
                 };
                 polygons.append(tempPolygon);
@@ -344,27 +334,27 @@ void Item::loadMtl(const QString path)
             {
                 temp.ka =
                 {
-                    stringList[1].toDouble(),
-                    stringList[2].toDouble(),
-                    stringList[3].toDouble(),
+                    stringList[1].toInt(),
+                    stringList[2].toInt(),
+                    stringList[3].toInt(),
                 };
             }
             else if (!QString::compare(stringList[0], "Kd"))
             {
                 temp.kd =
                 {
-                    stringList[1].toDouble(),
-                    stringList[2].toDouble(),
-                    stringList[3].toDouble(),
+                    stringList[1].toInt(),
+                    stringList[2].toInt(),
+                    stringList[3].toInt(),
                 };
             }
             else if (!QString::compare(stringList[0], "Ks"))
             {
                 temp.ks =
                 {
-                    stringList[1].toDouble(),
-                    stringList[2].toDouble(),
-                    stringList[3].toDouble(),
+                    stringList[1].toInt(),
+                    stringList[2].toInt(),
+                    stringList[3].toInt(),
                 };
             }
             else if (!QString::compare(stringList[0], "Ns"))
@@ -409,5 +399,111 @@ void Item::normalise(const int imageHeight, const int imageWidth)
     {
         nPerspective[i][0] = (nPerspective[i][0] + 1) * 0.5 * imageWidth;
         nPerspective[i][1] = (1 - nPerspective[i][1]) * 0.5 * imageHeight;
+    }
+}
+
+void Item::rasterise(const int imageHeight, const int imageWidth)
+{
+    // Go through all polygons and scan them with z-buffer
+    for (int i = 0; i < polygons.size(); i++)
+    {
+        // Find points positions, max and min y
+        int minY, maxY;
+        intPoint_t A, B, C, temp;
+        // Unable to use floor in initializer list
+        A.x = floor(vPerspective[polygons[i].points[0]][0]);
+        A.y = floor(vPerspective[polygons[i].points[0]][1]);
+        A.z = floor(vPerspective[polygons[i].points[0]][2]);
+        B.x = floor(vPerspective[polygons[i].points[1]][0]);
+        B.y = floor(vPerspective[polygons[i].points[1]][1]);
+        B.z = floor(vPerspective[polygons[i].points[1]][2]);
+        C.x = floor(vPerspective[polygons[i].points[2]][0]);
+        C.y = floor(vPerspective[polygons[i].points[2]][1]);
+        C.z = floor(vPerspective[polygons[i].points[2]][2]);
+        // Finding maxY and minY point
+        temp = { A.x, A.y, A.z };
+        // maxY point is stored in A
+        if (A.y > B.y)
+        {
+            if (A.y > C.y)
+            {
+                maxY = A.y;
+                if (B.y > C.y)
+                {
+                    minY = C.y;
+                }
+                else
+                {
+                    minY = B.y;
+                }
+            }
+            else
+            {
+                maxY = C.y;
+                minY = B.y;
+                A = { C.x, C.y, C.z };
+                C = { temp.x, temp.y, temp.z };
+            }
+        }
+        else
+        {
+            if (B.y > C.y)
+            {
+                if (A.y > C.y)
+                {
+                    minY = C.y;
+                }
+                else
+                {
+                    minY = A.y;
+                }
+                maxY = B.y;
+                A = { B.x, B.y, B.z };
+                B = { temp.x, temp.y, temp.z };
+            }
+            else
+            {
+                maxY = C.y;
+                minY = B.y;
+                A = { C.x, C.y, C.z };
+                C = { temp.x, temp.y, temp.z };
+            }
+        }
+        /* Left vector is C, right vector is B
+         * If scalar multiplication is positive or zero
+         * nothing changes
+         * Else change B and C places
+         */
+        intPoint_t CA, CB;
+        CA = { A.x - C.x, A.y - C.y, A.z - C.z };
+        CB = { B.x - C.x, B.y - B.y, B.z - C.z };
+        if (CA.x * CB.x + CA.y * CB.y + CA.z * CB.z < 0)
+        {
+            temp = { C.x, C.y, C.z };
+            B = { C.x, C.y, C.z };
+            C = { temp.x, temp.y, temp.z };
+        }
+        // Interpolation starts here
+        for (int y = maxY; y >= minY; y--)
+        {
+            int diff = y - A.y;
+            float aCoeff = 1 / (C.y - A.y) * diff;
+            float bCoeff = 1 / (C.y - A.y) * diff;
+            int xa = A.x + (C.x - A.x) * aCoeff;
+            int xb = A.x + (B.x - A.x) * bCoeff;
+            int za = A.z + (C.z - A.z) * aCoeff;
+            int zb = A.z + (B.z - A.z) * bCoeff;
+            // Moving from left side to right side and computing z
+            for (int x = xa; x < xb; x++)
+            {
+                double z = za + (zb - za) * (x - xa) * 1 / (xb - xa);
+//                if (scene->getDepthBufferElement(y, x) > z)
+//                {
+//                    scene->setDepthBufferElement(y, x, z);
+//                    scene->setImageElement(y, x, materialMap[polygons[i].materialKey].ka);
+//                }
+            }
+        }
+
     }
 }

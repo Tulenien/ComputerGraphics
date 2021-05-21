@@ -5,6 +5,8 @@
 #include <QFile>
 #include <QDebug>
 #include <cmath>
+#include <QColor>
+
 
 #define PI 3.14159265
 
@@ -17,29 +19,29 @@ struct point_t
     double z;
 };
 
+struct intPoint_t
+{
+    int x;
+    int y;
+    int z;
+};
+
 struct polygon
 {
     // QMap dictionary key
     QString materialKey;
     // Array index in matrix
-    int points[3];
-    int normals[3];
-    int textures[3];
-};
-
-struct rgbColor
-{
-    double red;
-    double green;
-    double blue;
+    std::size_t points[3];
+    std::size_t normals[3];
+    std::size_t textures[3];
 };
 
 struct material
 {
     double illum; // Illumination model
-    rgbColor ka;  // Ambient color
-    rgbColor kd;  // Diffuse color
-    rgbColor ks;  // Specular color
+    QColor ka;  // Ambient color
+    QColor kd;  // Diffuse color
+    QColor ks;  // Specular color
     double ni;    // Optical density
     double ns;    // Focus of specular highlights
 };
@@ -52,8 +54,6 @@ public:
     point_t centerXZ();
     // If height changes -- change item offset to reach floor on scene
     void setToFloor(double height);
-    void setDepthBuffer(matrix *depthBuffer);
-    void setImage(QImage *&image);
 
     void move(double x, double y, double z);
     // Rotate with scene
@@ -63,6 +63,7 @@ public:
     // Projection
     void project(const matrix &projection);
     void normalise(const int imageHeight, const int imageWidth);
+    void rasterise(const int imageHeight, const int imageWidth);
     // TODO: use minPoint, maxPoint
     void getBorder();
 
@@ -80,8 +81,6 @@ private:
     matrix transform;
     matrix vPerspective, nPerspective;
     matrix textures;
-    matrix *depthBuffer = nullptr;
-    QImage *image = nullptr;
 
     // Change y-coordinate to put item on floor
     bool multiplyMatrix(matrix &A, const matrix &B);
