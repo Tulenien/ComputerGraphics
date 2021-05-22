@@ -41,11 +41,6 @@ public:
     Item &getItemByIndex(int index);
     // Incapsulates all transformations and Zbuffer
     void render();
-    // Then included in render method:
-    void projectScene();
-    // To NDC coordinates
-    void normaliseScene();
-    void rasteriseScene();
 
 private:
     camera cam;
@@ -53,6 +48,12 @@ private:
     QVector<Item> items;
     matrix depthBuffer;
     double width, length, height;
+
+    // Then included in render method:
+    void projectScene();
+    // To NDC coordinates
+    void normaliseScene();
+    void rasteriseScene();
 };
 
 #endif // SCENE_H

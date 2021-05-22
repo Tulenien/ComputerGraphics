@@ -9,7 +9,7 @@ Scene::Scene(QWidget *parent)
     //qDebug() << size; // 640x480
     image = new QImage(size, QImage::Format_RGBA8888);
     image->fill(QColor(0, 0, 0));
-    this->setPixmap(QPixmap::fromImage(*image));
+    //setPixmap(QPixmap::fromImage(*image));
     // Camera setup: fovX, fovY, focalLength, near, far
     cam = {90, 90, 35, 0.1, 100};
     // Set depth buffer's size equal to QImage size
@@ -65,6 +65,15 @@ void Scene::setSize(double &width, double &length, double &height)
 Item &Scene::getItemByIndex(int index)
 {
     return items[index];
+}
+
+void Scene::render()
+{
+    projectScene();
+    normaliseScene();
+    rasteriseScene();
+    setPixmap(QPixmap::fromImage(*image));
+    this->show();
 }
 
 void Scene::rotateSceneOX(double angle)

@@ -391,6 +391,16 @@ void Item::project(const matrix &projection)
        result stored in v(n)Perspective matrix
     */
     matrix vCurrent, nCurrent;
+    if (!transform.size())
+    {
+        transform =
+        {
+            {1, 0, 0, 0},
+            {0, 1, 0, 0},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1}
+        };
+    }
     multiplyMatrix(vOriginal, transform, vCurrent);
     multiplyMatrix(nOriginal, transform, nCurrent);
     multiplyMatrix(vCurrent, projection, vPerspective);
@@ -497,20 +507,26 @@ void Item::rasterise()
         for (int y = maxY; y >= minY; y--)
         {
             int diff = y - A.y;
-            float aCoeff = 1 / (C.y - A.y) * diff;
-            float bCoeff = 1 / (C.y - A.y) * diff;
-            int xa = A.x + (C.x - A.x) * aCoeff;
-            int xb = A.x + (B.x - A.x) * bCoeff;
-            int za = A.z + (C.z - A.z) * aCoeff;
-            int zb = A.z + (B.z - A.z) * bCoeff;
-            // Moving from left side to right side and computing z
-            for (int x = xa; x < xb; x++)
+            if (C.y - A.y)
             {
-                double z = za + (zb - za) * (x - xa) * 1 / (xb - xa);
-                if ((*depthBuffer)[y][x] > z)
+                float aCoeff = 1 / (C.y - A.y) * diff;
+                float bCoeff = 1 / (C.y - A.y) * diff;
+                int xa = A.x + (C.x - A.x) * aCoeff;
+                int xb = A.x + (B.x - A.x) * bCoeff;
+                int za = A.z + (C.z - A.z) * aCoeff;
+                int zb = A.z + (B.z - A.z) * bCoeff;
+                // Moving from left side to right side and computing z
+                for (int x = xa; x < xb; x++)
                 {
-                    (*depthBuffer)[y][x] = z;
-                    image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                    if (xb - xa)
+                    {
+                        double z = za + (zb - za) * (x - xa) * 1 / (xb - xa);
+                        if ((*depthBuffer)[y][x] > z)
+                        {
+                            (*depthBuffer)[y][x] = z;
+                            image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                        }
+                    }
                 }
             }
         }
