@@ -518,14 +518,11 @@ void Item::rasterise()
                 // Moving from left side to right side and computing z
                 for (int x = xa; x < xb; x++)
                 {
-                    if (xb - xa)
+                    double z = za + (zb - za) * (x - xa) * 1 / (xb - xa);
+                    if ((*depthBuffer)[y][x] > z)
                     {
-                        double z = za + (zb - za) * (x - xa) * 1 / (xb - xa);
-                        if ((*depthBuffer)[y][x] > z)
-                        {
-                            (*depthBuffer)[y][x] = z;
-                            image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
-                        }
+                        (*depthBuffer)[y][x] = z;
+                        image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
                     }
                 }
             }
