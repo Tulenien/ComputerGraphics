@@ -7,25 +7,30 @@ Scene::Scene(QWidget *parent)
     height = 250;
     QSize size = this->size();
     //qDebug() << size; // 640x480
+    imageWidth = size.width();
+    imageHeight = size.height();
     image = new QImage(size, QImage::Format_RGBA8888);
-    image->fill(QColor(0, 0, 0));
-    //setPixmap(QPixmap::fromImage(*image));
-    // Camera setup: fovX, fovY, focalLength, near, far
-    cam = {90, 90, 35, 0.1, 100};
+    image->fill(QColor(255, 255, 255));
+    setPixmap(QPixmap::fromImage(*image));
+    /* Full Aperture 35mm camera parametersn in mm:
+     * Aperture width = 24
+     * Aperture height = 18
+     * Focal length = 20
+     * Near clipping plane = 1
+     * Far clipping plane = 1000
+     */
+    // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
+    cam = {90, 90, 20, 24, 18, 1, 1000};
     // Set depth buffer's size equal to QImage size
     for (int i = 0; i < image->size().height(); i++)
     {
         std::vector<double> temp;
         for (int j = 0; j < image->size().width(); j++)
         {
-            temp.push_back(Q_INFINITY);
+            // Set to far clipping plane z-value
+            temp.push_back(cam.far);
         }
         depthBuffer.push_back(temp);
-    }
-    for (int i = 0; i < items.size(); i++)
-    {
-        items[i].setDepthBuffer(&depthBuffer);
-        items[i].setImage(image);
     }
 }
 
@@ -67,13 +72,23 @@ Item &Scene::getItemByIndex(int index)
     return items[index];
 }
 
-void Scene::render()
+void Scene::renderScene()
 {
-    projectScene();
-    normaliseScene();
     rasteriseScene();
+    for (int i = 0; i < items.size(); i++)
+    {
+        items[0].render(depthBuffer, image, imageWidth, imageHeight);
+    }
     setPixmap(QPixmap::fromImage(*image));
     this->show();
+}
+
+void Scene::computeScreenCoordinates()
+{
+    imageTop = cam.apertureWidth / 2 / cam.focalLength * cam.near;
+    imageRight = cam.apertureHeight / 2 / cam.focalLength * cam.near;
+    imageBottom = -imageTop;
+    imageLeft = -imageRight;
 }
 
 void Scene::rotateSceneOX(double angle)
@@ -86,7 +101,7 @@ void Scene::rotateSceneOY(double angle)
     for (int i = 0; i < items.size(); i++) items[i].rotateOY(angle);
 }
 
-void Scene::projectScene()
+const matrix Scene::computeProjectionMatrix()
 {
     double scaleX = 1;  //1 / tanh(cam.fovX * 0.5 * PI / 180);
     double scaleY = 1;  //1 / tanh(cam.fovY * 0.5 * PI / 180);
@@ -97,26 +112,20 @@ void Scene::projectScene()
         {0, scaleY, 0, 0},
         {0, 0, -cam.far * coeff, -1},
         {0, 0, -cam.far * cam.near * coeff, 0}
+        // Makes z = infinity
+//        {0, 0, 0, -1},
+//        {0, 0, 0, 0}
     };
-    for (int i = 0; i < items.size(); i++)
-    {
-        items[0].project(projection);
-    }
-}
-
-void Scene::normaliseScene()
-{
-    // Working with projected points
-    for (int i = 0; i < items.size(); i++)
-    {
-        items[0].normalise(image->size().height(), image->size().width());
-    }
+    return projection;
 }
 
 void Scene::rasteriseScene()
 {
+    computeScreenCoordinates();
+    const matrix projectionMatrix = computeProjectionMatrix();
     for (int i = 0; i < items.size(); i++)
     {
-        items[0].rasterise();
+        items[0].rasterise(projectionMatrix, imageLeft, imageRight, imageTop, imageBottom,
+                           cam.near, imageWidth, imageHeight);
     }
 }

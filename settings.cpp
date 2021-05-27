@@ -98,5 +98,5 @@ void Settings::openItemMenu(QListWidgetItem *item)
 
 void Settings::showScene()
 {
-    scene->render();
+    scene->renderScene();
 }

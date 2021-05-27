@@ -7,6 +7,7 @@
 #include <QColor>
 #include <QDebug>
 #include <QImage>
+#include <QFileSystemModel>
 
 
 #define PI 3.14159265
@@ -63,10 +64,12 @@ public:
     void rotateOY(double angle);
     void rotateOX(double angle);
     void spin(double angle);
-    // Projection
-    void project(const matrix &projection);
-    void normalise(const int imageHeight, const int imageWidth);
-    void rasterise();
+    void rasterise(const matrix &projectionMatrix,
+                   const double &left, const double &right,
+                   const double &top, const double &bottom,
+                   const double &near, const double &imageWidth,
+                   const double &imageHeight);
+    void render(matrix &buffer, QImage *&image, double width, double height);
     // TODO: use minPoint, maxPoint
     void getBorder();
 
@@ -85,10 +88,6 @@ private:
     matrix vPerspective, nPerspective;
     matrix textures;
 
-    // Originated in Scene
-    matrix *depthBuffer;
-    QImage *image;
-
     // Change y-coordinate to put item on floor
     bool multiplyMatrix(matrix &A, const matrix &B);
     bool multiplyMatrix(const matrix &A, const matrix &B, matrix &C);
@@ -97,6 +96,8 @@ private:
     void loadMtl(const QString path);
     QMap<QString, material> materialMap;
     QList<polygon> polygons;
+
+    double edgeCheck(const std::vector<double> &a, const std::vector<double> &b, const std::vector<double> &c);
 };
 
 #endif // ITEM_H

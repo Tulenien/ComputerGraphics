@@ -29,6 +29,14 @@ bool Item::multiplyMatrix(matrix &A, const matrix &B)
                 }
             }
             temp.push_back(row);
+//            if (temp[i][3] != 1.)
+//            {
+//                // Normalise if w is different than 1
+//                double coeff = 1 / temp[i][3];
+//                temp[i][0] *= coeff;
+//                temp[i][1] *= coeff;
+//                temp[i][2] *= coeff;
+//            }
         }
         A.clear();
         for (std::size_t i = 0; i < rows; i++)
@@ -61,6 +69,14 @@ bool Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
                 }
             }
             C.push_back(row);
+            if (C[i][3] != 1.)
+            {
+                // Normalise if w is different than 1
+                double coeff = 1 / C[i][3];
+                C[i][0] *= coeff;
+                C[i][1] *= coeff;
+                C[i][2] *= coeff;
+            }
         }
     }
     return status;
@@ -131,16 +147,6 @@ void Item::move(double x, double y, double z)
 void Item::setToFloor(double height)
 {
     toFloor = height;
-}
-
-void Item::setDepthBuffer(matrix *depthBuffer)
-{
-    this->depthBuffer = depthBuffer;
-}
-
-void Item::setImage(QImage *&image)
-{
-    this->image = image;
 }
 
 point_t Item::centerXZ()
@@ -305,6 +311,7 @@ void Item::loadMtl(const QString path)
 {
     QFile mtlFile(path);
     QTextStream pipeline(&mtlFile);
+    pipeline.setCodec("Windows-1251");
     if (!mtlFile.open(QIODevice::ReadOnly))
     {
         qDebug() << "File not opened";
@@ -385,7 +392,12 @@ void Item::loadMtl(const QString path)
     mtlFile.close();
 }
 
-void Item::project(const matrix &projection)
+void Item::rasterise(
+        const matrix &projectionMatrix,
+        const double &left, const double &right,
+        const double &top, const double &bottom,
+        const double &near, const double &imageWidth,
+        const double &imageHeight)
 {
     /* Projects points and normals,
        result stored in v(n)Perspective matrix
@@ -401,131 +413,98 @@ void Item::project(const matrix &projection)
             {0, 0, 0, 1}
         };
     }
-    multiplyMatrix(vOriginal, transform, vCurrent);
-    multiplyMatrix(nOriginal, transform, nCurrent);
-    multiplyMatrix(vCurrent, projection, vPerspective);
-    multiplyMatrix(nCurrent, projection, nPerspective);
+//    multiplyMatrix(vOriginal, transform, vCurrent);
+//    multiplyMatrix(nOriginal, transform, nCurrent);
+//    multiplyMatrix(vCurrent, projectionMatrix, vPerspective);
+//    multiplyMatrix(nCurrent, projectionMatrix, nPerspective);
+    multiplyMatrix(vOriginal, projectionMatrix, vPerspective);
+    //multiplyMatrix(nOriginal, projectionMatrix, nPerspective);
+    for (size_t i = 0; i < vPerspective.size(); i++)
+    {
+        // Convert to screen space
+        // Debug here: possible zero division
+        double zCoeff = 1 / vPerspective[i][2];
+        vPerspective[i][0] *= near * zCoeff;
+        vPerspective[i][1] *= near * zCoeff;
+        // Convert to NDC
+        vPerspective[i][0] *= 2 * 1 / (right - left) - (right + left) * 1 / (right - left);
+        vPerspective[i][1] *= 2 * 1 / (top - bottom) - (top + bottom) * 1 / (top - bottom);
+        // Convert to raster
+        vPerspective[i][0]++;
+        vPerspective[i][1] *= -1;
+        vPerspective[i][1]++;
+        vPerspective[i][0] *= 0.5 * imageWidth;
+        vPerspective[i][1] *= 0.5 * imageHeight;
+        vPerspective[i][2] *= -1;
+    }
 }
 
-void Item::normalise(const int imageHeight, const int imageWidth)
+void Item::render(matrix &buffer, QImage *&image, double width, double height)
 {
-    // Normalise and convert to raster (add conversion to int later)
-    for (std::size_t i = 0; i < vPerspective.size(); i++)
-    {
-        vPerspective[i][0] = (vPerspective[i][0] + 1) * 0.5 * imageWidth;
-        vPerspective[i][1] = (1 - vPerspective[i][1]) * 0.5 * imageHeight;
-    }
-    for (std::size_t i = 0; i < nPerspective.size(); i++)
-    {
-        nPerspective[i][0] = (nPerspective[i][0] + 1) * 0.5 * imageWidth;
-        nPerspective[i][1] = (1 - nPerspective[i][1]) * 0.5 * imageHeight;
-    }
-}
-
-void Item::rasterise()
-{
-    // Go through all polygons and scan them with z-buffer
     for (int i = 0; i < polygons.size(); i++)
     {
-        // Find points positions, max and min y
-        int minY, maxY;
-        intPoint_t A, B, C, temp;
-        // Unable to use floor in initializer list
-        A.x = floor(vPerspective[polygons[i].points[0]][0]);
-        A.y = floor(vPerspective[polygons[i].points[0]][1]);
-        A.z = floor(vPerspective[polygons[i].points[0]][2]);
-        B.x = floor(vPerspective[polygons[i].points[1]][0]);
-        B.y = floor(vPerspective[polygons[i].points[1]][1]);
-        B.z = floor(vPerspective[polygons[i].points[1]][2]);
-        C.x = floor(vPerspective[polygons[i].points[2]][0]);
-        C.y = floor(vPerspective[polygons[i].points[2]][1]);
-        C.z = floor(vPerspective[polygons[i].points[2]][2]);
-        // Finding maxY and minY point
-        temp = { A.x, A.y, A.z };
-        // maxY point is stored in A
-        if (A.y > B.y)
+        // Triangle points
+        std::vector<double> p1 = vPerspective[polygons[i].points[0]];
+        std::vector<double> p2 = vPerspective[polygons[i].points[1]];
+        std::vector<double> p3 = vPerspective[polygons[i].points[2]];
+        // Divide them by z coordinate (* 1 / z)
+        double coeff = 1 / p1[2];
+        //p1[0] *= coeff;
+        //p1[1] *= coeff;
+        p1[2] *= coeff;
+        coeff = 1 / p2[2];
+        //p2[0] *= coeff;
+        //p2[1] *= coeff;
+        p2[2] *= coeff;
+        coeff = 1 / p3[2];
+        //p3[0] *= coeff;
+        //p3[1] *= coeff;
+        p3[2] *= coeff;
+        // Find rectangle boundaries
+        double xmin = std::min(p1[0], std::min(p2[0], p3[0]));
+        double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
+        double xmax = std::max(p1[0], std::max(p2[0], p3[0]));
+        double ymax = std::max(p1[1], std::max(p2[1], p3[1]));
+        // The triangle is out of screen
+        if (!(xmin > width - 1 || xmax < 0 || ymin > height - 1 || ymax < 0))
         {
-            if (A.y > C.y)
+            // Starting points
+            int x0 = std::max(0, (int)floor(xmin));
+            int x1 = std::min((int)width - 1, (int)floor(xmax));
+            int y0 = std::max(0, (int)floor(ymin));
+            int y1 = std::min((int)height - 1, (int)floor(ymax));
+
+            double area = edgeCheck(p1, p2, p3);
+
+            for (int y = y0; y < y1; y++)
             {
-                maxY = A.y;
-                if (B.y > C.y)
+                for (int x = x0; x < x1; x++)
                 {
-                    minY = C.y;
-                }
-                else
-                {
-                    minY = B.y;
-                }
-            }
-            else
-            {
-                maxY = C.y;
-                minY = B.y;
-                A = { C.x, C.y, C.z };
-                C = { temp.x, temp.y, temp.z };
-            }
-        }
-        else
-        {
-            if (B.y > C.y)
-            {
-                if (A.y > C.y)
-                {
-                    minY = C.y;
-                }
-                else
-                {
-                    minY = A.y;
-                }
-                maxY = B.y;
-                A = { B.x, B.y, B.z };
-                B = { temp.x, temp.y, temp.z };
-            }
-            else
-            {
-                maxY = C.y;
-                minY = B.y;
-                A = { C.x, C.y, C.z };
-                C = { temp.x, temp.y, temp.z };
-            }
-        }
-        /* Left vector is C, right vector is B
-         * If scalar multiplication is positive or zero
-         * nothing changes
-         * Else change B and C places
-         */
-        intPoint_t CA, CB;
-        CA = { A.x - C.x, A.y - C.y, A.z - C.z };
-        CB = { B.x - C.x, B.y - B.y, B.z - C.z };
-        if (CA.x * CB.x + CA.y * CB.y + CA.z * CB.z < 0)
-        {
-            temp = { C.x, C.y, C.z };
-            B = { C.x, C.y, C.z };
-            C = { temp.x, temp.y, temp.z };
-        }
-        // Interpolation starts here
-        for (int y = maxY; y >= minY; y--)
-        {
-            int diff = y - A.y;
-            if (C.y - A.y)
-            {
-                float aCoeff = 1 / (C.y - A.y) * diff;
-                float bCoeff = 1 / (C.y - A.y) * diff;
-                int xa = A.x + (C.x - A.x) * aCoeff;
-                int xb = A.x + (B.x - A.x) * bCoeff;
-                int za = A.z + (C.z - A.z) * aCoeff;
-                int zb = A.z + (B.z - A.z) * bCoeff;
-                // Moving from left side to right side and computing z
-                for (int x = xa; x < xb; x++)
-                {
-                    double z = za + (zb - za) * (x - xa) * 1 / (xb - xa);
-                    if ((*depthBuffer)[y][x] > z)
+                    std::vector<double> sample = {x + 0.5, y + 0.5, 0.};
+                    double w1 = edgeCheck(p2, p3, sample);
+                    double w2 = edgeCheck(p3, p1, sample);
+                    double w3 = edgeCheck(p1, p2, sample);
+                    if (w1 >= 0 && w2 >= 0 && w3 >= 0)
                     {
-                        (*depthBuffer)[y][x] = z;
-                        image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                        double coeff = 1 / area;
+                        w1 *= area;
+                        w2 *= area;
+                        w3 *= area;
+                        double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
+                        double z = 1 / oneOverZ;
+                        if (z < buffer[y][x])
+                        {
+                            buffer[y][x] = z;
+                            image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                        }
                     }
                 }
             }
         }
     }
+}
+
+double Item::edgeCheck(const std::vector<double> &a, const std::vector<double> &b, const std::vector<double> &c)
+{
+    return (c[0] - a[0]) * (b[1] - a[1]) * (c[1] - a[1]) * (b[0] - a[0]);
 }

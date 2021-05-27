@@ -9,17 +9,19 @@
  * Add Update function
  * Put all methods of render into 'render'
  * Add 3D Clipping method
-*/
+ */
 
 struct camera
 {
     /* Needed for image scaling:
      * Field of View - angle between sides of camera view
      * Focal length - distance from camera point to far clipping plane
-    */
+     */
     double fovX;
     double fovY;
     double focalLength;
+    double apertureWidth;
+    double apertureHeight;
     // Near and far clipping planes
     double near;
     double far;
@@ -40,9 +42,11 @@ public:
     void rotateSceneOY(double angle);
     Item &getItemByIndex(int index);
     // Incapsulates all transformations and Zbuffer
-    void render();
+    void renderScene();
 
 private:
+    double imageWidth, imageHeight;
+    double imageTop, imageRight, imageBottom, imageLeft;
     camera cam;
     QImage *image;
     QVector<Item> items;
@@ -50,9 +54,9 @@ private:
     double width, length, height;
 
     // Then included in render method:
-    void projectScene();
+    void computeScreenCoordinates();
+    const matrix computeProjectionMatrix();
     // To NDC coordinates
-    void normaliseScene();
     void rasteriseScene();
 };
 
