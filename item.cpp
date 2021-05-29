@@ -69,13 +69,20 @@ bool Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
                 }
             }
             C.push_back(row);
-            if (C[i][3] != 1.)
+            if (!(abs(C[i][3] - 1.) < .1e-15))
             {
                 // Normalise if w is different than 1
                 double coeff = 1 / C[i][3];
-                C[i][0] *= coeff;
-                C[i][1] *= coeff;
-                C[i][2] *= coeff;
+                if (qIsInf(coeff))
+                {
+                    C[i][3] = 1;
+                }
+                else
+                {
+                    C[i][0] *= coeff;
+                    C[i][1] *= coeff;
+                    C[i][2] *= coeff;
+                }
             }
         }
     }
@@ -402,17 +409,17 @@ void Item::rasterise(
     /* Projects points and normals,
        result stored in v(n)Perspective matrix
     */
-    matrix vCurrent, nCurrent;
-    if (!transform.size())
-    {
-        transform =
-        {
-            {1, 0, 0, 0},
-            {0, 1, 0, 0},
-            {0, 0, 1, 0},
-            {0, 0, 0, 1}
-        };
-    }
+//    matrix vCurrent, nCurrent;
+//    if (!transform.size())
+//    {
+//        transform =
+//        {
+//            {1, 0, 0, 0},
+//            {0, 1, 0, 0},
+//            {0, 0, 1, 0},
+//            {0, 0, 0, 1}
+//        };
+//    }
 //    multiplyMatrix(vOriginal, transform, vCurrent);
 //    multiplyMatrix(nOriginal, transform, nCurrent);
 //    multiplyMatrix(vCurrent, projectionMatrix, vPerspective);
@@ -449,16 +456,16 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
         std::vector<double> p3 = vPerspective[polygons[i].points[2]];
         // Divide them by z coordinate (* 1 / z)
         double coeff = 1 / p1[2];
-        //p1[0] *= coeff;
-        //p1[1] *= coeff;
+        p1[0] *= coeff;
+        p1[1] *= coeff;
         p1[2] *= coeff;
         coeff = 1 / p2[2];
-        //p2[0] *= coeff;
-        //p2[1] *= coeff;
+        p2[0] *= coeff;
+        p2[1] *= coeff;
         p2[2] *= coeff;
         coeff = 1 / p3[2];
-        //p3[0] *= coeff;
-        //p3[1] *= coeff;
+        p3[0] *= coeff;
+        p3[1] *= coeff;
         p3[2] *= coeff;
         // Find rectangle boundaries
         double xmin = std::min(p1[0], std::min(p2[0], p3[0]));

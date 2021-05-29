@@ -105,7 +105,7 @@ const matrix Scene::computeProjectionMatrix()
 {
     double scaleX = 1;  //1 / tanh(cam.fovX * 0.5 * PI / 180);
     double scaleY = 1;  //1 / tanh(cam.fovY * 0.5 * PI / 180);
-    double coeff = 1 / cam.far - cam.near;
+    double coeff = 1 / (cam.far - cam.near);
     const matrix projection =
     {
         {scaleX, 0, 0, 0},
