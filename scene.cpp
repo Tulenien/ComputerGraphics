@@ -85,8 +85,12 @@ void Scene::renderScene()
 
 void Scene::computeScreenCoordinates()
 {
-    imageTop = cam.apertureWidth / 2 / cam.focalLength * cam.near;
-    imageRight = cam.apertureHeight / 2 / cam.focalLength * cam.near;
+//    imageTop = cam.apertureWidth / 2 / cam.focalLength * cam.near;
+//    imageRight = cam.apertureHeight / 2 / cam.focalLength * cam.near;
+//    imageBottom = -imageTop;
+//    imageLeft = -imageRight;
+    imageTop = imageHeight / 2;
+    imageRight = imageWidth / 2;
     imageBottom = -imageTop;
     imageLeft = -imageRight;
 }
@@ -110,11 +114,10 @@ const matrix Scene::computeProjectionMatrix()
     {
         {scaleX, 0, 0, 0},
         {0, scaleY, 0, 0},
-        {0, 0, -cam.far * coeff, -1},
-        {0, 0, -cam.far * cam.near * coeff, 0}
-        // Makes z = infinity
-//        {0, 0, 0, -1},
-//        {0, 0, 0, 0}
+//        {0, 0, -cam.far * coeff, -1},
+//        {0, 0, -cam.far * cam.near * coeff, 0}
+        {0, 0, 1, -1},
+        {0, 0, 100, 0}
     };
     return projection;
 }
