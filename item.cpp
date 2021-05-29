@@ -29,14 +29,6 @@ bool Item::multiplyMatrix(matrix &A, const matrix &B)
                 }
             }
             temp.push_back(row);
-//            if (temp[i][3] != 1.)
-//            {
-//                // Normalise if w is different than 1
-//                double coeff = 1 / temp[i][3];
-//                temp[i][0] *= coeff;
-//                temp[i][1] *= coeff;
-//                temp[i][2] *= coeff;
-//            }
         }
         A.clear();
         for (std::size_t i = 0; i < rows; i++)
@@ -69,21 +61,6 @@ bool Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
                 }
             }
             C.push_back(row);
-            if (!(abs(C[i][3] - 1.) < .1e-15))
-            {
-                // Normalise if w is different than 1
-                double coeff = 1 / C[i][3];
-                if (qIsInf(coeff))
-                {
-                    C[i][3] = 1;
-                }
-                else
-                {
-                    C[i][0] *= coeff;
-                    C[i][1] *= coeff;
-                    C[i][2] *= coeff;
-                }
-            }
         }
     }
     return status;
@@ -400,7 +377,7 @@ void Item::loadMtl(const QString path)
 }
 
 void Item::rasterise(
-        const matrix &projectionMatrix,
+        matrix &camera, const matrix &projection,
         const double &left, const double &right,
         const double &top, const double &bottom,
         const double &near, const double &imageWidth,
@@ -409,34 +386,41 @@ void Item::rasterise(
     /* Projects points and normals,
        result stored in v(n)Perspective matrix
     */
-//    matrix vCurrent, nCurrent;
-//    if (!transform.size())
-//    {
-//        transform =
-//        {
-//            {1, 0, 0, 0},
-//            {0, 1, 0, 0},
-//            {0, 0, 1, 0},
-//            {0, 0, 0, 1}
-//        };
-//    }
-//    multiplyMatrix(vOriginal, transform, vCurrent);
-//    multiplyMatrix(nOriginal, transform, nCurrent);
-//    multiplyMatrix(vCurrent, projectionMatrix, vPerspective);
-//    multiplyMatrix(nCurrent, projectionMatrix, nPerspective);
-    multiplyMatrix(vOriginal, projectionMatrix, vPerspective);
-    //multiplyMatrix(nOriginal, projectionMatrix, nPerspective);
+    if (transform.size())
+    {
+        multiplyMatrix(transform, camera);
+        multiplyMatrix(transform, projection);
+        multiplyMatrix(vOriginal, transform, vPerspective);
+        multiplyMatrix(nOriginal, transform, nPerspective);
+    }
+    else
+    {
+        // World space to camera space and to perspective projection
+        multiplyMatrix(camera, projection);
+        multiplyMatrix(vOriginal, camera, vPerspective);
+        multiplyMatrix(nOriginal, camera, nPerspective);
+    }
+    // Convert to raster
     for (size_t i = 0; i < vPerspective.size(); i++)
     {
-        // Convert to screen space
-        // Debug here: possible zero division
-        double zCoeff = 1 / vPerspective[i][2];
-        vPerspective[i][0] *= near * zCoeff;
-        vPerspective[i][1] *= near * zCoeff;
+        if (!(abs(vPerspective[i][3] - 1.) < .1e-15))
+        {
+            // Normalise if w is different than 1 and not zero
+            double coeff = 1 / vPerspective[i][3];
+            if (qIsInf(coeff))
+            {
+                vPerspective[i][3] = 1;
+            }
+            else
+            {
+                vPerspective[i][0] *= coeff;
+                vPerspective[i][1] *= coeff;
+                vPerspective[i][2] *= coeff;
+            }
+        }
         // Convert to NDC
-        vPerspective[i][0] *= 2 * 1 / (right - left) - (right + left) * 1 / (right - left);
-        vPerspective[i][1] *= 2 * 1 / (top - bottom) - (top + bottom) * 1 / (top - bottom);
-        // Convert to raster
+        vPerspective[i][0] = 2 * (vPerspective[i][0] - right - left) / (right - left);
+        vPerspective[i][1] = 2 * (vPerspective[i][1] - top - bottom) / (top - bottom);
         vPerspective[i][0]++;
         vPerspective[i][1] *= -1;
         vPerspective[i][1]++;
@@ -454,19 +438,6 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
         std::vector<double> p1 = vPerspective[polygons[i].points[0]];
         std::vector<double> p2 = vPerspective[polygons[i].points[1]];
         std::vector<double> p3 = vPerspective[polygons[i].points[2]];
-        // Divide them by z coordinate (* 1 / z)
-        double coeff = 1 / p1[2];
-        p1[0] *= coeff;
-        p1[1] *= coeff;
-        p1[2] *= coeff;
-        coeff = 1 / p2[2];
-        p2[0] *= coeff;
-        p2[1] *= coeff;
-        p2[2] *= coeff;
-        coeff = 1 / p3[2];
-        p3[0] *= coeff;
-        p3[1] *= coeff;
-        p3[2] *= coeff;
         // Find rectangle boundaries
         double xmin = std::min(p1[0], std::min(p2[0], p3[0]));
         double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
@@ -483,26 +454,27 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
 
             double area = edgeCheck(p1, p2, p3);
 
-            for (int y = y0; y < y1; y++)
+            for (int y = y0; y <= y1; ++y)
             {
-                for (int x = x0; x < x1; x++)
+                for (int x = x0; x <= x1; x++)
                 {
-                    std::vector<double> sample = {x + 0.5, y + 0.5, 0.};
+                    std::vector<double> sample = {x + 0.5, y + 0.5, 0};
                     double w1 = edgeCheck(p2, p3, sample);
                     double w2 = edgeCheck(p3, p1, sample);
                     double w3 = edgeCheck(p1, p2, sample);
                     if (w1 >= 0 && w2 >= 0 && w3 >= 0)
                     {
                         double coeff = 1 / area;
-                        w1 *= area;
-                        w2 *= area;
-                        w3 *= area;
+                        w1 *= coeff;
+                        w2 *= coeff;
+                        w3 *= coeff;
                         double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
                         double z = 1 / oneOverZ;
                         if (z < buffer[y][x])
                         {
                             buffer[y][x] = z;
-                            image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                            //image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                            image->setPixelColor(y, x, QColor(i * 20, 0, 0));
                         }
                     }
                 }
@@ -513,5 +485,5 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
 
 double Item::edgeCheck(const std::vector<double> &a, const std::vector<double> &b, const std::vector<double> &c)
 {
-    return (c[0] - a[0]) * (b[1] - a[1]) * (c[1] - a[1]) * (b[0] - a[0]);
+    return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
 }

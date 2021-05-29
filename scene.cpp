@@ -20,7 +20,7 @@ Scene::Scene(QWidget *parent)
      * Far clipping plane = 1000
      */
     // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
-    cam = {90, 90, 20, 24, 18, 1, 1000};
+    cam = {90, 90, 20, 24, 18, 1, 100};
     // Set depth buffer's size equal to QImage size
     for (int i = 0; i < image->size().height(); i++)
     {
@@ -28,7 +28,7 @@ Scene::Scene(QWidget *parent)
         for (int j = 0; j < image->size().width(); j++)
         {
             // Set to far clipping plane z-value
-            temp.push_back(cam.far);
+            temp.push_back(qInf());
         }
         depthBuffer.push_back(temp);
     }
@@ -89,8 +89,8 @@ void Scene::computeScreenCoordinates()
 //    imageRight = cam.apertureHeight / 2 / cam.focalLength * cam.near;
 //    imageBottom = -imageTop;
 //    imageLeft = -imageRight;
-    imageTop = imageHeight / 2;
-    imageRight = imageWidth / 2;
+    imageTop = imageHeight / 2 * cam.near;
+    imageRight = imageWidth / 2 * cam.near;
     imageBottom = -imageTop;
     imageLeft = -imageRight;
 }
@@ -105,19 +105,31 @@ void Scene::rotateSceneOY(double angle)
     for (int i = 0; i < items.size(); i++) items[i].rotateOY(angle);
 }
 
+matrix Scene::computeCamera()
+{
+    // World to camera transformation
+    matrix camera =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, -1, 0},
+        {0, 0, 100, 1}
+    };
+    return camera;
+}
+
 const matrix Scene::computeProjectionMatrix()
 {
     double scaleX = 1;  //1 / tanh(cam.fovX * 0.5 * PI / 180);
     double scaleY = 1;  //1 / tanh(cam.fovY * 0.5 * PI / 180);
-    double coeff = 1 / (cam.far - cam.near);
+    // World to camera transformation
+    double coeff = -1 / (cam.far - cam.near);
     const matrix projection =
     {
         {scaleX, 0, 0, 0},
         {0, scaleY, 0, 0},
-//        {0, 0, -cam.far * coeff, -1},
-//        {0, 0, -cam.far * cam.near * coeff, 0}
-        {0, 0, 1, -1},
-        {0, 0, 100, 0}
+        {0, 0, (cam.far + cam.near) * coeff, cam.near * cam.far * coeff},
+        {0, 0, -1, 0}
     };
     return projection;
 }
@@ -125,10 +137,11 @@ const matrix Scene::computeProjectionMatrix()
 void Scene::rasteriseScene()
 {
     computeScreenCoordinates();
-    const matrix projectionMatrix = computeProjectionMatrix();
+    matrix camera = computeCamera();
+    const matrix projection = computeProjectionMatrix();
     for (int i = 0; i < items.size(); i++)
     {
-        items[0].rasterise(projectionMatrix, imageLeft, imageRight, imageTop, imageBottom,
+        items[0].rasterise(camera, projection, imageLeft, imageRight, imageTop, imageBottom,
                            cam.near, imageWidth, imageHeight);
     }
 }
