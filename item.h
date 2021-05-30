@@ -9,7 +9,6 @@
 #include <QImage>
 #include <QFileSystemModel>
 
-
 #define PI 3.14159265
 
 typedef std::vector<std::vector<double>> matrix;
@@ -64,7 +63,7 @@ public:
     void rotateOY(double angle);
     void rotateOX(double angle);
     void spin(double angle);
-    void rasterise(matrix &camera, const matrix &projection,
+    void rasterise(const matrix &projection,
                    const double &left, const double &right,
                    const double &top, const double &bottom,
                    const double &near, const double &imageWidth,

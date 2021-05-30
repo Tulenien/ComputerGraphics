@@ -55,7 +55,6 @@ private:
 
     // Then included in render method:
     void computeScreenCoordinates();
-    matrix computeCamera();
     const matrix computeProjectionMatrix();
     // To NDC coordinates
     void rasteriseScene();

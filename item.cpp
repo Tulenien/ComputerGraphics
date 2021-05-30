@@ -377,7 +377,7 @@ void Item::loadMtl(const QString path)
 }
 
 void Item::rasterise(
-        matrix &camera, const matrix &projection,
+        const matrix &projection,
         const double &left, const double &right,
         const double &top, const double &bottom,
         const double &near, const double &imageWidth,
@@ -388,45 +388,43 @@ void Item::rasterise(
     */
     if (transform.size())
     {
-        multiplyMatrix(transform, camera);
+        transform[3][2] = 300;
         multiplyMatrix(transform, projection);
         multiplyMatrix(vOriginal, transform, vPerspective);
         multiplyMatrix(nOriginal, transform, nPerspective);
     }
     else
     {
+        transform =
+        {
+            {1, 0, 0, 0},
+            {0, 1, 0, 0},
+            {0, 0, 1, 0},
+            {-100, -50, 300, 1}
+        };
+        multiplyMatrix(transform, projection);
         // World space to camera space and to perspective projection
-        multiplyMatrix(camera, projection);
-        multiplyMatrix(vOriginal, camera, vPerspective);
-        multiplyMatrix(nOriginal, camera, nPerspective);
+        multiplyMatrix(vOriginal, transform, vPerspective);
+        multiplyMatrix(nOriginal, transform, nPerspective);
     }
     // Convert to raster
     for (size_t i = 0; i < vPerspective.size(); i++)
     {
-        if (!(abs(vPerspective[i][3] - 1.) < .1e-15))
+        if (!qIsNull(vPerspective[i][3]))
         {
-            // Normalise if w is different than 1 and not zero
+            // Normalise if w is different than zero
             double coeff = 1 / vPerspective[i][3];
-            if (qIsInf(coeff))
-            {
-                vPerspective[i][3] = 1;
-            }
-            else
-            {
-                vPerspective[i][0] *= coeff;
-                vPerspective[i][1] *= coeff;
-                vPerspective[i][2] *= coeff;
-            }
+            vPerspective[i][0] *= coeff;
+            vPerspective[i][1] *= coeff;
+            vPerspective[i][2] *= coeff;
         }
         // Convert to NDC
-        vPerspective[i][0] = 2 * (vPerspective[i][0] - right - left) / (right - left);
-        vPerspective[i][1] = 2 * (vPerspective[i][1] - top - bottom) / (top - bottom);
+//        vPerspective[i][0] = 2 * (vPerspective[i][0] - right - left) / (right - left);
+//        vPerspective[i][1] = 2 * (vPerspective[i][1] - top - bottom) / (top - bottom);
         vPerspective[i][0]++;
-        vPerspective[i][1] *= -1;
         vPerspective[i][1]++;
         vPerspective[i][0] *= 0.5 * imageWidth;
         vPerspective[i][1] *= 0.5 * imageHeight;
-        vPerspective[i][2] *= -1;
     }
 }
 
@@ -473,14 +471,47 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                         if (z < buffer[y][x])
                         {
                             buffer[y][x] = z;
-                            //image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
-                            image->setPixelColor(y, x, QColor(i * 20, 0, 0));
+                            image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                            //image->setPixelColor(y, x, QColor(i * 20, 0, 0));
                         }
                     }
                 }
             }
         }
     }
+//    QColor line_color(0, 0, 0);
+//    for (size_t i = 0; i < vPerspective.size() - 1; i++)
+//    {
+//        for (size_t j = i + 1; j < vPerspective.size(); j++)
+//        {
+//            int x0 = vPerspective[i][0];
+//            int x1 = vPerspective[j][0];
+//            int y0 = vPerspective[i][1];
+//            int y1 = vPerspective[j][1];
+//            const int dx = abs(x1 - x0);
+//            const int dy = abs(y1 - y0);
+//            const int signX = x0 < x1 ? 1 : -1;
+//            const int signY = y0 < y1 ? 1 : -1;
+//            int error = dx - dy;
+//            int double_error = 0;
+//            image->setPixel(x1, y1, line_color.rgba());
+//            while(x0 != x1 || y0 != y1)
+//            {
+//                image->setPixel(x0, y0, line_color.rgba());
+//                double_error = error << 1;
+//                if (double_error > -dy)
+//                {
+//                    error -= dy;
+//                    x0 += signX;
+//                }
+//                if (double_error < dx)
+//                {
+//                    error += dx;
+//                    y0 += signY;
+//                }
+//            }
+//        }
+//    }
 }
 
 double Item::edgeCheck(const std::vector<double> &a, const std::vector<double> &b, const std::vector<double> &c)
