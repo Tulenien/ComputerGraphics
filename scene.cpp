@@ -13,7 +13,7 @@ Scene::Scene(QWidget *parent)
     image->fill(QColor(255, 255, 255));
     setPixmap(QPixmap::fromImage(*image));
     // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
-    cam = {90, 90, 20, 24, 18, 1, 100};
+    cam = {90, 90, 20, 24, 18, 1, 10000};
     // Set depth buffer's size equal to QImage size
     for (int i = 0; i < image->size().height(); i++)
     {
@@ -30,7 +30,6 @@ Scene::Scene(QWidget *parent)
 void Scene::addItem(QString dir, QString item)
 {
     items.push_back(Item(dir, item));
-    items.last().setToFloor(-height / 2);
 }
 
 double Scene::getWidth()
@@ -53,11 +52,6 @@ void Scene::setSize(double &width, double &length, double &height)
     this->width = width;
     this->length = length;
     this->height = height;
-    double offset = -height / 2;
-    for (int i = 0; i < items.size(); i++)
-    {
-        items[i].setToFloor(offset);
-    }
 }
 
 Item &Scene::getItemByIndex(int index)
@@ -100,8 +94,8 @@ void Scene::rotateSceneOY(double angle)
 
 const matrix Scene::computeProjectionMatrix()
 {
-    double scale = 1 / tanh(cam.fovX * 0.5 * PI / 180);
-    double a = imageWidth / imageHeight;
+    double scale = 1;//1 / tanh(cam.fovX * 0.5 * PI / 180);
+    double a = 1;//imageWidth / imageHeight;
     // World to camera transformation
     double q = cam.far / (cam.far - cam.near);
     const matrix projection =
@@ -116,11 +110,10 @@ const matrix Scene::computeProjectionMatrix()
 
 void Scene::rasteriseScene()
 {
-    computeScreenCoordinates();
+    //computeScreenCoordinates();
     const matrix projection = computeProjectionMatrix();
     for (int i = 0; i < items.size(); i++)
     {
-        items[0].rasterise(projection, imageLeft, imageRight, imageTop, imageBottom,
-                           cam.near, imageWidth, imageHeight);
+        items[i].rasterise(projection, imageWidth, imageHeight);
     }
 }

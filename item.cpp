@@ -84,7 +84,6 @@ void Item::rotateOX(double angleOX)
         }
     }
     else multiplyMatrix(transform, rotate);
-    // Multiply [vOriginal][transform] and show the result on screen
 }
 
 void Item::rotateOY(double angle)
@@ -105,7 +104,6 @@ void Item::rotateOY(double angle)
         }
     }
     else multiplyMatrix(transform, rotate);
-    // Multiply [vOriginal][transform] and show the result on screen
 }
 
 void Item::move(double x, double y, double z)
@@ -125,12 +123,6 @@ void Item::move(double x, double y, double z)
         }
     }
     else multiplyMatrix(transform, move);
-    // Multiply [vOriginal][transform] and show the result on screen
-}
-
-void Item::setToFloor(double height)
-{
-    toFloor = height;
 }
 
 point_t Item::centerXZ()
@@ -193,7 +185,6 @@ void Item::spin(double angle)
     else multiplyMatrix(transform, T);
     multiplyMatrix(transform, rotate);
     multiplyMatrix(transform, antiT);
-    // Multiply [vOriginal][transform] and show the result on screen
 }
 
 void Item::loadObj(const QString dir, const QString file)
@@ -333,12 +324,9 @@ void Item::loadMtl(const QString path)
             }
             else if (!QString::compare(stringList[0], "Ka"))
             {
-                temp.ka =
-                {
-                    stringList[1].toInt(),
-                    stringList[2].toInt(),
-                    stringList[3].toInt(),
-                };
+                temp.ka.setRedF(stringList[1].toDouble());
+                temp.ka.setGreenF(stringList[2].toDouble());
+                temp.ka.setBlueF(stringList[3].toDouble());
             }
             else if (!QString::compare(stringList[0], "Kd"))
             {
@@ -376,19 +364,14 @@ void Item::loadMtl(const QString path)
     mtlFile.close();
 }
 
-void Item::rasterise(
-        const matrix &projection,
-        const double &left, const double &right,
-        const double &top, const double &bottom,
-        const double &near, const double &imageWidth,
-        const double &imageHeight)
+void Item::rasterise(const matrix &projection, const double &imageWidth,
+                     const double &imageHeight)
 {
     /* Projects points and normals,
        result stored in v(n)Perspective matrix
     */
     if (transform.size())
     {
-        transform[3][2] = 300;
         multiplyMatrix(transform, projection);
         multiplyMatrix(vOriginal, transform, vPerspective);
         multiplyMatrix(nOriginal, transform, nPerspective);
@@ -400,10 +383,9 @@ void Item::rasterise(
             {1, 0, 0, 0},
             {0, 1, 0, 0},
             {0, 0, 1, 0},
-            {-100, -50, 300, 1}
+            {0, 0, 800, 1}
         };
         multiplyMatrix(transform, projection);
-        // World space to camera space and to perspective projection
         multiplyMatrix(vOriginal, transform, vPerspective);
         multiplyMatrix(nOriginal, transform, nPerspective);
     }
@@ -418,10 +400,8 @@ void Item::rasterise(
             vPerspective[i][1] *= coeff;
             vPerspective[i][2] *= coeff;
         }
-        // Convert to NDC
-//        vPerspective[i][0] = 2 * (vPerspective[i][0] - right - left) / (right - left);
-//        vPerspective[i][1] = 2 * (vPerspective[i][1] - top - bottom) / (top - bottom);
         vPerspective[i][0]++;
+        vPerspective[i][1] *= -1;
         vPerspective[i][1]++;
         vPerspective[i][0] *= 0.5 * imageWidth;
         vPerspective[i][1] *= 0.5 * imageHeight;
