@@ -10,17 +10,28 @@ Scene::Scene(QWidget *parent)
     imageWidth = size.width();
     imageHeight = size.height();
     image = new QImage(size, QImage::Format_RGBA8888);
+    setupImage();
+}
+
+void Scene::setupImage()
+{
     image->fill(QColor(255, 255, 255));
+    // Delete later
     setPixmap(QPixmap::fromImage(*image));
     // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
     cam = {90, 90, 20, 24, 18, 1, 10000};
+    // Clear zBuffer
     // Set depth buffer's size equal to QImage size
+    for (size_t i = 0; i < depthBuffer.size(); i++)
+    {
+        depthBuffer[i].clear();
+    }
+    depthBuffer.clear();
     for (int i = 0; i < image->size().height(); i++)
     {
         std::vector<double> temp;
         for (int j = 0; j < image->size().width(); j++)
         {
-            // Set to far clipping plane z-value
             temp.push_back(qInf());
         }
         depthBuffer.push_back(temp);
@@ -61,6 +72,7 @@ Item &Scene::getItemByIndex(int index)
 
 void Scene::renderScene()
 {
+    setupImage();
     rasteriseScene();
     for (int i = 0; i < items.size(); i++)
     {

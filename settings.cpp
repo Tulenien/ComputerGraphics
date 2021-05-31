@@ -71,6 +71,7 @@ void Settings::addItems()
             }
         }
     }
+    scene->renderScene();
 }
 
 void Settings::sceneSizeChanged()

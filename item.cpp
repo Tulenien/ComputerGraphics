@@ -47,6 +47,14 @@ bool Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
     std::size_t rows = A.size();
     std::size_t cols = B[0].size();
     std::size_t nest = B.size();
+    if (C.size())
+    {
+        for (size_t i = 0; i < C.size(); i++)
+        {
+            C[i].clear();
+        }
+        C.clear();
+    }
     if (A[0].size() != nest) status = false;
     else
     {
@@ -330,21 +338,15 @@ void Item::loadMtl(const QString path)
             }
             else if (!QString::compare(stringList[0], "Kd"))
             {
-                temp.kd =
-                {
-                    stringList[1].toInt(),
-                    stringList[2].toInt(),
-                    stringList[3].toInt(),
-                };
+                temp.kd.setRedF(stringList[1].toDouble());
+                temp.kd.setGreenF(stringList[2].toDouble());
+                temp.kd.setBlueF(stringList[3].toDouble());
             }
             else if (!QString::compare(stringList[0], "Ks"))
             {
-                temp.ks =
-                {
-                    stringList[1].toInt(),
-                    stringList[2].toInt(),
-                    stringList[3].toInt(),
-                };
+                temp.ks.setRedF(stringList[1].toDouble());
+                temp.ks.setGreenF(stringList[2].toDouble());
+                temp.ks.setBlueF(stringList[3].toDouble());
             }
             else if (!QString::compare(stringList[0], "Ns"))
             {
@@ -370,25 +372,21 @@ void Item::rasterise(const matrix &projection, const double &imageWidth,
     /* Projects points and normals,
        result stored in v(n)Perspective matrix
     */
-    if (transform.size())
-    {
-        multiplyMatrix(transform, projection);
-        multiplyMatrix(vOriginal, transform, vPerspective);
-        multiplyMatrix(nOriginal, transform, nPerspective);
-    }
-    else
+    if (!transform.size())
     {
         transform =
         {
             {1, 0, 0, 0},
             {0, 1, 0, 0},
             {0, 0, 1, 0},
-            {0, 0, 800, 1}
+            {0, 0, 250, 1}
         };
-        multiplyMatrix(transform, projection);
-        multiplyMatrix(vOriginal, transform, vPerspective);
-        multiplyMatrix(nOriginal, transform, nPerspective);
     }
+    multiplyMatrix(vOriginal, transform, vPerspective);
+    multiplyMatrix(nOriginal, transform, nPerspective);
+    multiplyMatrix(vOriginal, projection, vPerspective);
+    multiplyMatrix(nOriginal, projection, nPerspective);
+
     // Convert to raster
     for (size_t i = 0; i < vPerspective.size(); i++)
     {
@@ -448,10 +446,10 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                         w3 *= coeff;
                         double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
                         double z = 1 / oneOverZ;
-                        if (z < buffer[y][x])
+                        if (z < buffer[x][y])
                         {
-                            buffer[y][x] = z;
-                            image->setPixelColor(y, x, materialMap[polygons[i].materialKey].ka);
+                            buffer[x][y] = z;
+                            image->setPixelColor(x, y, materialMap[polygons[i].materialKey].ka);
                             //image->setPixelColor(y, x, QColor(i * 20, 0, 0));
                         }
                     }
