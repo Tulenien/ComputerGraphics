@@ -18,7 +18,6 @@ Settings::Settings(QWidget *parent) :
     connect(ui->addItemsButton, &QPushButton::released, this, &Settings::addItems);
     connect(ui->setSceneSize, &QPushButton::released, this, &Settings::sceneSizeChanged);
     connect(ui->ItemListWdt, &QListWidget::itemDoubleClicked, this, &Settings::openItemMenu);
-    connect(ui->showButton, &QPushButton::released, this, &Settings::showScene);
 }
 
 Settings::~Settings()

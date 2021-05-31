@@ -379,7 +379,7 @@ void Item::rasterise(const matrix &projection, const double &imageWidth,
             {1, 0, 0, 0},
             {0, 1, 0, 0},
             {0, 0, 1, 0},
-            {0, 0, 250, 1}
+            {0, 0, 800, 1}
         };
     }
     multiplyMatrix(vOriginal, transform, vPerspective);
@@ -446,9 +446,9 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                         w3 *= coeff;
                         double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
                         double z = 1 / oneOverZ;
-                        if (z < buffer[x][y])
+                        if (z < buffer[y][x])
                         {
-                            buffer[x][y] = z;
+                            buffer[y][x] = z;
                             image->setPixelColor(x, y, materialMap[polygons[i].materialKey].ka);
                             //image->setPixelColor(y, x, QColor(i * 20, 0, 0));
                         }
