@@ -404,47 +404,74 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
 {
     for (int i = 0; i < polygons.size(); i++)
     {
-        // Triangle points
+        // Polygon points
         std::vector<double> p1 = vPerspective[polygons[i].points[0]];
         std::vector<double> p2 = vPerspective[polygons[i].points[1]];
         std::vector<double> p3 = vPerspective[polygons[i].points[2]];
-        // Find rectangle boundaries
-        double xmin = std::min(p1[0], std::min(p2[0], p3[0]));
-        double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
-        double xmax = std::max(p1[0], std::max(p2[0], p3[0]));
-        double ymax = std::max(p1[1], std::max(p2[1], p3[1]));
-        // The triangle is out of screen
-        if (!(xmin > width - 1 || xmax < 0 || ymin > height - 1 || ymax < 0))
+        /* Polygon normal:
+         * Cross product of two vectors on the plane
+         * p1->p2 and p1->p3
+         */
+        std::vector<double> line1 = {(p2[0] - p1[0]), (p2[1] - p1[1]), (p2[2] - p1[2])};
+        std::vector<double> line2 = {(p3[0] - p1[0]), (p3[1] - p1[1]), (p3[2] - p1[2])};
+        // y1 * z2 - z1 * y2, z1 * x2 - x1 * z2, x1 * y2 - y1 * x2
+        std::vector<double> n =
         {
-            // Starting points
-            int x0 = std::max(0, (int)floor(xmin));
-            int x1 = std::min((int)width - 1, (int)floor(xmax));
-            int y0 = std::max(0, (int)floor(ymin));
-            int y1 = std::min((int)height - 1, (int)floor(ymax));
-
-            double area = edgeCheck(p1, p2, p3);
-
-            for (int y = y0; y <= y1; ++y)
             {
-                for (int x = x0; x <= x1; x++)
+                line1[1] * line2[2] - line1[2] * line2[1],
+                line1[2] * line2[0] - line1[0] * line2[2],
+                line1[0] * line2[1] - line1[1] * line2[0]
+            }
+        };
+        // Normalize polygon normal
+        double ncoeff = 1 / sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+        n[0] *= ncoeff;
+        n[1] *= ncoeff;
+        n[2] *= ncoeff;
+        // We also need camera
+        std::vector<double> camera = {0, 0, 0};
+        if (n[0] * (p1[0] - camera[0]) +
+            n[1] * (p1[1] - camera[1]) +
+            n[2] * (p1[2] - camera[2]) < 0.)
+        {
+            // Find rectangle boundaries
+            double xmin = std::min(p1[0], std::min(p2[0], p3[0]));
+            double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
+            double xmax = std::max(p1[0], std::max(p2[0], p3[0]));
+            double ymax = std::max(p1[1], std::max(p2[1], p3[1]));
+            // The triangle is out of screen
+            if (!(xmin > width - 1 || xmax < 0 || ymin > height - 1 || ymax < 0))
+            {
+                // Starting points
+                int x0 = std::max(0, (int)floor(xmin));
+                int x1 = std::min((int)width - 1, (int)floor(xmax));
+                int y0 = std::max(0, (int)floor(ymin));
+                int y1 = std::min((int)height - 1, (int)floor(ymax));
+
+                double area = edgeCheck(p1, p2, p3);
+
+                for (int y = y0; y <= y1; ++y)
                 {
-                    std::vector<double> sample = {x + 0.5, y + 0.5, 0};
-                    double w1 = edgeCheck(p2, p3, sample);
-                    double w2 = edgeCheck(p3, p1, sample);
-                    double w3 = edgeCheck(p1, p2, sample);
-                    if (w1 >= 0 && w2 >= 0 && w3 >= 0)
+                    for (int x = x0; x <= x1; x++)
                     {
-                        double coeff = 1 / area;
-                        w1 *= coeff;
-                        w2 *= coeff;
-                        w3 *= coeff;
-                        double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
-                        double z = 1 / oneOverZ;
-                        if (z < buffer[y][x])
+                        std::vector<double> sample = {x + 0.5, y + 0.5, 0};
+                        double w1 = edgeCheck(p2, p3, sample);
+                        double w2 = edgeCheck(p3, p1, sample);
+                        double w3 = edgeCheck(p1, p2, sample);
+                        if (w1 >= 0 && w2 >= 0 && w3 >= 0)
                         {
-                            buffer[y][x] = z;
-                            image->setPixelColor(x, y, materialMap[polygons[i].materialKey].ka);
-                            //image->setPixelColor(y, x, QColor(i * 20, 0, 0));
+                            double coeff = 1 / area;
+                            w1 *= coeff;
+                            w2 *= coeff;
+                            w3 *= coeff;
+                            double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
+                            double z = 1 / oneOverZ;
+                            if (z < buffer[y][x])
+                            {
+                                buffer[y][x] = z;
+                                image->setPixelColor(x, y, materialMap[polygons[i].materialKey].ka);
+                                //image->setPixelColor(y, x, QColor(i * 20, 0, 0));
+                            }
                         }
                     }
                 }
