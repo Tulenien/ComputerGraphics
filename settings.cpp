@@ -16,6 +16,7 @@ Settings::Settings(QWidget *parent) :
     ui->lengthField->setValidator(&horizontalValidator);
     ui->widthField->setValidator(&horizontalValidator);
     connect(ui->addItemsButton, &QPushButton::released, this, &Settings::addItems);
+    connect(ui->deleteItemButton, &QPushButton::released, this, &Settings::deleteItem);
     connect(ui->setSceneSize, &QPushButton::released, this, &Settings::sceneSizeChanged);
     connect(ui->ItemListWdt, &QListWidget::itemDoubleClicked, this, &Settings::openItemMenu);
 }
@@ -71,6 +72,18 @@ void Settings::addItems()
         }
     }
     scene->renderScene();
+}
+
+void Settings::deleteItem()
+{
+    for (int i = 0; i < ui->ItemListWdt->count(); i++)
+    {
+        if (ui->ItemListWdt->item(i)->isSelected())
+        {
+            scene->deleteItem(i);
+        }
+    }
+    qDeleteAll(ui->ItemListWdt->selectedItems());
 }
 
 void Settings::sceneSizeChanged()

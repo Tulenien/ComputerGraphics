@@ -6,7 +6,6 @@ Scene::Scene(QWidget *parent)
     length = 200;
     height = 250;
     QSize size = this->size();
-    //qDebug() << size; // 640x480
     imageWidth = size.width();
     imageHeight = size.height();
     image = new QImage(size, QImage::Format_RGBA8888);
@@ -16,12 +15,8 @@ Scene::Scene(QWidget *parent)
 void Scene::setupImage()
 {
     image->fill(QColor(255, 255, 255));
-    // Delete later
-    setPixmap(QPixmap::fromImage(*image));
     // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
     cam = {90, 90, 20, 24, 18, 1, 10000};
-    // Clear zBuffer
-    // Set depth buffer's size equal to QImage size
     for (size_t i = 0; i < depthBuffer.size(); i++)
     {
         depthBuffer[i].clear();
@@ -41,6 +36,12 @@ void Scene::setupImage()
 void Scene::addItem(QString dir, QString item)
 {
     items.push_back(Item(dir, item));
+}
+
+void Scene::deleteItem(int index)
+{
+    items.remove(items.size() - index - 1);
+    renderScene();
 }
 
 double Scene::getWidth()
@@ -73,10 +74,13 @@ Item &Scene::getItemByIndex(int index)
 void Scene::renderScene()
 {
     setupImage();
-    rasteriseScene();
-    for (int i = 0; i < items.size(); i++)
+    if (!items.isEmpty())
     {
-        items[i].render(depthBuffer, image, imageWidth, imageHeight);
+        rasteriseScene();
+        for (int i = 0; i < items.size(); i++)
+        {
+            items[i].render(depthBuffer, image, imageWidth, imageHeight);
+        }
     }
     setPixmap(QPixmap::fromImage(*image));
     this->show();
