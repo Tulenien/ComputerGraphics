@@ -128,14 +128,16 @@ void Item::move(double x, double y, double z)
 
 point_t Item::centerXZ()
 {
+    matrix current;
+    multiplyMatrix(vOriginal, transform, current);
     // Find min and max coordinates of x and z
-    double minX = vOriginal[0][0], maxX = vOriginal[0][0];
-    double minZ = vOriginal[0][2], maxZ = vOriginal[0][2];
+    double minX = current[0][0], maxX = current[0][0];
+    double minZ = current[0][2], maxZ = current[0][2];
     // If only one point --> crash
-    for (std::size_t i = 1; i < vOriginal.size(); i++)
+    for (std::size_t i = 1; i < current.size(); i++)
     {
-        double currentX = vOriginal[i][0];
-        double currentZ = vOriginal[i][2];
+        double currentX = current[i][0];
+        double currentZ = current[i][2];
         if (currentX > maxX) maxX = currentX;
         else if (currentX < minX) minX = currentX;
         if (currentZ > maxZ) maxZ = currentZ;
