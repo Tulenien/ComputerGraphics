@@ -68,7 +68,7 @@ void Scene::setSize(double &width, double &length, double &height)
 
 Item &Scene::getItemByIndex(int index)
 {
-    return items[index];
+    return items[items.size() - index - 1];
 }
 
 void Scene::renderScene()
@@ -76,9 +76,11 @@ void Scene::renderScene()
     setupImage();
     if (!items.isEmpty())
     {
-        rasteriseScene();
+        //computeScreenCoordinates();
+        const matrix projection = computeProjectionMatrix();
         for (int i = 0; i < items.size(); i++)
         {
+            items[i].rasterise(projection, imageWidth, imageHeight);
             items[i].render(depthBuffer, image, imageWidth, imageHeight);
         }
     }
@@ -122,14 +124,4 @@ const matrix Scene::computeProjectionMatrix()
         {0, 0, -cam.near * q, 0}
     };
     return projection;
-}
-
-void Scene::rasteriseScene()
-{
-    //computeScreenCoordinates();
-    const matrix projection = computeProjectionMatrix();
-    for (int i = 0; i < items.size(); i++)
-    {
-        items[i].rasterise(projection, imageWidth, imageHeight);
-    }
 }

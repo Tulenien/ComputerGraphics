@@ -123,14 +123,7 @@ void Item::move(double x, double y, double z)
         {0, 0, 1, 0},
         {x, y, z, 1}
     };
-    if(transform.empty())
-    {
-        for (std::size_t i = 0; i < 4; i++)
-        {
-                transform.push_back(move[i]);
-        }
-    }
-    else multiplyMatrix(transform, move);
+    multiplyMatrix(transform, move);
 }
 
 point_t Item::centerXZ()
@@ -159,7 +152,6 @@ point_t Item::centerXZ()
 
 void Item::spin(double angle)
 {
-    // Rotate item around its local OY axis
     double radAngle = angle * PI / 180.;
     point_t center = centerXZ();
     const matrix T =
@@ -384,8 +376,8 @@ void Item::rasterise(const matrix &projection, const double &imageWidth,
     }
     multiplyMatrix(vOriginal, transform, vPerspective);
     multiplyMatrix(nOriginal, transform, nPerspective);
-    multiplyMatrix(vOriginal, projection, vPerspective);
-    multiplyMatrix(nOriginal, projection, nPerspective);
+    multiplyMatrix(vPerspective, projection);
+    multiplyMatrix(nPerspective, projection);
 
     // Convert to raster
     for (size_t i = 0; i < vPerspective.size(); i++)

@@ -58,7 +58,6 @@ private:
     void computeScreenCoordinates();
     void setupImage();
     const matrix computeProjectionMatrix();
-    void rasteriseScene();
 };
 
 #endif // SCENE_H
