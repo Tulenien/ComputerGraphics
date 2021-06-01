@@ -5,11 +5,22 @@ Scene::Scene(QWidget *parent)
     width = 200;
     length = 200;
     height = 250;
+    this->setMinimumSize(640, 480);
     QSize size = this->size();
     imageWidth = size.width();
     imageHeight = size.height();
     image = new QImage(size, QImage::Format_RGBA8888);
     setupImage();
+}
+
+void Scene::resizeEvent(QResizeEvent *event)
+{
+    QImage other(this->size(), QImage::Format_RGBA8888);
+    imageWidth = this->size().width();
+    imageHeight = this->size().height();
+    image->swap(other);
+    this->setPixmap(QPixmap::fromImage(*image));
+    renderScene();
 }
 
 void Scene::setupImage()

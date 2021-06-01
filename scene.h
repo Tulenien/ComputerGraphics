@@ -54,6 +54,7 @@ private:
     matrix depthBuffer;
     double width, length, height;
 
+    void resizeEvent(QResizeEvent *event);
     // Then included in render method:
     void computeScreenCoordinates();
     void setupImage();
