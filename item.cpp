@@ -429,7 +429,7 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
         n[1] *= ncoeff;
         n[2] *= ncoeff;
         // We also need camera
-        std::vector<double> camera = {0, 0, 0};
+        std::vector<double> camera = {0, 0, -1};
         if (n[0] * (p1[0] - camera[0]) +
             n[1] * (p1[1] - camera[1]) +
             n[2] * (p1[2] - camera[2]) < 0.)
@@ -450,6 +450,33 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
 
                 double area = edgeCheck(p1, p2, p3);
 
+                /* Compute barycentric coordinates:
+                 * Reuse line1 and line2
+                 * Find a new point inside the triangle
+                 */
+                point_t p4 = {(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2};
+                p4.x = p4.x + p3[0] / 2;
+                p4.y = p4.y + p3[1] / 2;
+                p4.z = p4.z + p3[2] / 2;
+                std::vector<double> line3 = {(p4.x - p1[0]), (p4.y - p1[1]), (p4.z - p1[2])};
+                double d00 = (line1[0] * line1[0] + line1[1] * line1[1] + line1[2] * line1[2]);
+                double d01 = (line1[0] * line2[0] + line1[1] * line2[1] + line1[2] * line2[2]);
+                double d11 = (line2[0] * line2[0] + line2[1] * line2[1] + line2[2] * line2[2]);
+                double d20 = (line3[0] * line1[0] + line3[1] * line1[1] + line3[2] * line1[2]);
+                double d21 = (line3[0] * line2[0] + line3[1] * line2[1] + line3[2] * line2[2]);
+                double invDenom = 1. / (d00 * d11 - d01 * d01);
+                double v = (d11 * d20 - d01 * d21) * invDenom;
+                double w = (d00 * d21 - d01 * d20) * invDenom;
+                double u = 1. - v - w;
+                // Points normals
+                std::vector<double> n1 = vPerspective[polygons[i].normals[0]];
+                std::vector<double> n2 = vPerspective[polygons[i].normals[1]];
+                std::vector<double> n3 = vPerspective[polygons[i].normals[2]];
+                // Rewrite n with new hit normal
+                n[0] = n1[0] * w + n2[0] * u + n3[0] * v;
+                n[1] = n1[1] * w + n2[1] * u + n3[1] * v;
+                n[2] = n1[2] * w + n2[2] * u + n3[2] * v;
+
                 for (int y = y0; y <= y1; ++y)
                 {
                     for (int x = x0; x <= x1; x++)
@@ -468,8 +495,14 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                             double z = 1 / oneOverZ;
                             if (z < buffer[y][x])
                             {
+                                double lightCoeff = std::max(0., camera[0] * n[0] + camera[1] * n[1] + camera[2] * n[2]);
+                                QColor fillColor = materialMap[polygons[i].materialKey].ka;
+                                qreal r = fillColor.redF() * lightCoeff;
+                                qreal g = fillColor.greenF() * lightCoeff;
+                                qreal b = fillColor.blueF() * lightCoeff;
+                                fillColor.setRgbF(r, g, b);
                                 buffer[y][x] = z;
-                                image->setPixelColor(x, y, materialMap[polygons[i].materialKey].ka);
+                                image->setPixelColor(x, y, fillColor);
                                 //image->setPixelColor(y, x, QColor(i * 20, 0, 0));
                             }
                         }
