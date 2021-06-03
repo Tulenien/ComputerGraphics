@@ -449,7 +449,6 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                 int y1 = std::min((int)height - 1, (int)floor(ymax));
 
                 double area = edgeCheck(p1, p2, p3);
-
                 /* Compute barycentric coordinates:
                  * Reuse line1 and line2
                  * Find a new point inside the triangle
@@ -476,8 +475,7 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                 n[0] = n1[0] * w + n2[0] * u + n3[0] * v;
                 n[1] = n1[1] * w + n2[1] * u + n3[1] * v;
                 n[2] = n1[2] * w + n2[2] * u + n3[2] * v;
-
-                for (int y = y0; y <= y1; ++y)
+                for (int y = y0; y <= y1; y++)
                 {
                     for (int x = x0; x <= x1; x++)
                     {
@@ -493,7 +491,7 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                             w3 *= coeff;
                             double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
                             double z = 1 / oneOverZ;
-                            if (z < buffer[y][x])
+                            if (z > buffer[y][x])
                             {
                                 double lightCoeff = std::max(0., camera[0] * n[0] + camera[1] * n[1] + camera[2] * n[2]);
                                 QColor fillColor = materialMap[polygons[i].materialKey].ka;
@@ -503,7 +501,17 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                                 fillColor.setRgbF(r, g, b);
                                 buffer[y][x] = z;
                                 image->setPixelColor(x, y, fillColor);
-                                //image->setPixelColor(y, x, QColor(i * 20, 0, 0));
+                                // Debug polygon colors
+//                                QColor fillColor;
+//                                qreal r = w1 * 0 + w2 * 0 + w3 * 1;
+//                                qreal g = w1 * 0 + w2 * 1 + w3 * 0;
+//                                qreal b = w1 * 1 + w2 * 0 + w3 * 0;
+//                                r *= z;
+//                                g *= z;
+//                                b *= z;
+//                                buffer[y][x] = z;
+//                                fillColor.setRgbF(r, g, b);
+//                                image->setPixelColor(x, y, fillColor);
                             }
                         }
                     }
