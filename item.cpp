@@ -373,13 +373,21 @@ void Item::rasterise(const matrix &projection, const double &imageWidth,
             {1, 0, 0, 0},
             {0, 1, 0, 0},
             {0, 0, 1, 0},
-            {0, 0, 800, 1}
+            {0, 0, 200, 1}
         };
     }
     multiplyMatrix(vOriginal, transform, vPerspective);
+    double transX = transform[3][0];
+    double transY = transform[3][1];
+    double transZ = transform[3][2];
+    transform[3][0] = 0;
+    transform[3][1] = 0;
+    transform[3][2] = 0;
     multiplyMatrix(nOriginal, transform, nPerspective);
+    transform[3][0] = transX;
+    transform[3][1] = transY;
+    transform[3][2] = transZ;
     multiplyMatrix(vPerspective, projection);
-    multiplyMatrix(nPerspective, projection);
 
     // Convert to raster
     for (size_t i = 0; i < vPerspective.size(); i++)
@@ -429,7 +437,7 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
         n[1] *= ncoeff;
         n[2] *= ncoeff;
         // We also need camera
-        std::vector<double> camera = {0, 0, -1};
+        std::vector<double> camera = {0, 0, 0};
         if (n[0] * (p1[0] - camera[0]) +
             n[1] * (p1[1] - camera[1]) +
             n[2] * (p1[2] - camera[2]) < 0.)
@@ -443,16 +451,19 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
             if (!(xmin > width - 1 || xmax < 0 || ymin > height - 1 || ymax < 0))
             {
                 // Starting points
-                int x0 = std::max(0, (int)floor(xmin));
-                int x1 = std::min((int)width - 1, (int)floor(xmax));
-                int y0 = std::max(0, (int)floor(ymin));
-                int y1 = std::min((int)height - 1, (int)floor(ymax));
+//                int x0 = std::max(0, (int)floor(xmin));
+//                int x1 = std::min((int)width - 1, (int)floor(xmax));
+//                int y0 = std::max(0, (int)floor(ymin));
+//                int y1 = std::min((int)height - 1, (int)floor(ymax));
+                int x0 = std::max(0, int(xmin));
+                int x1 = std::min(int(width) - 1, int(xmax));
+                int y0 = std::max(0, int(ymin));
+                int y1 = std::min(int(height) - 1, int(ymax));
 
                 double area = edgeCheck(p1, p2, p3);
                 /* Compute barycentric coordinates:
                  * Reuse line1 and line2
                  * Find a new point inside the triangle
-                 */
                 point_t p4 = {(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2};
                 p4.x = p4.x + p3[0] / 2;
                 p4.y = p4.y + p3[1] / 2;
@@ -475,11 +486,28 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                 n[0] = n1[0] * w + n2[0] * u + n3[0] * v;
                 n[1] = n1[1] * w + n2[1] * u + n3[1] * v;
                 n[2] = n1[2] * w + n2[2] * u + n3[2] * v;
+                */
+                std::vector<double> n1 = nPerspective[polygons[i].normals[0]];
+                std::vector<double> n2 = nPerspective[polygons[i].normals[1]];
+                std::vector<double> n3 = nPerspective[polygons[i].normals[2]];
+                double invLen = 1 / sqrt(n1[0] * n1[0] + n1[1] * n1[1] + n1[2] * n1[2]);
+                n1[0] *= invLen;
+                n1[1] *= invLen;
+                n1[2] *= invLen;
+                invLen = 1 / sqrt(n2[0] * n2[0] + n2[1] * n2[1] + n2[2] * n2[2]);
+                n2[0] *= invLen;
+                n2[1] *= invLen;
+                n2[2] *= invLen;
+                invLen = 1 / sqrt(n3[0] * n3[0] + n3[1] * n3[1] + n3[2] * n3[2]);
+                n3[0] *= invLen;
+                n3[1] *= invLen;
+                n3[2] *= invLen;
                 for (int y = y0; y <= y1; y++)
                 {
                     for (int x = x0; x <= x1; x++)
                     {
-                        std::vector<double> sample = {x + 0.5, y + 0.5, 0};
+//                        std::vector<double> sample = {x + 0.5, y + 0.5, 0.};
+                        std::vector<double> sample = {x + 0., y + 0., 0.};
                         double w1 = edgeCheck(p2, p3, sample);
                         double w2 = edgeCheck(p3, p1, sample);
                         double w3 = edgeCheck(p1, p2, sample);
@@ -491,27 +519,38 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                             w3 *= coeff;
                             double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
                             double z = 1 / oneOverZ;
-                            if (z > buffer[y][x])
+                            if (z > buffer[x][y])
                             {
-                                double lightCoeff = std::max(0., camera[0] * n[0] + camera[1] * n[1] + camera[2] * n[2]);
-                                QColor fillColor = materialMap[polygons[i].materialKey].ka;
-                                qreal r = fillColor.redF() * lightCoeff;
-                                qreal g = fillColor.greenF() * lightCoeff;
-                                qreal b = fillColor.blueF() * lightCoeff;
-                                fillColor.setRgbF(r, g, b);
-                                buffer[y][x] = z;
-                                image->setPixelColor(x, y, fillColor);
-                                // Debug polygon colors
-//                                QColor fillColor;
-//                                qreal r = w1 * 0 + w2 * 0 + w3 * 1;
-//                                qreal g = w1 * 0 + w2 * 1 + w3 * 0;
-//                                qreal b = w1 * 1 + w2 * 0 + w3 * 0;
-//                                r *= z;
-//                                g *= z;
-//                                b *= z;
-//                                buffer[y][x] = z;
+//                                buffer[x][y] = z;
+//                                double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
+//                                QColor ambientColor = materialMap[polygons[i].materialKey].ka;
+//                                QColor diffuseColor = materialMap[polygons[i].materialKey].kd;
+//                                qreal ar, ag, ab;
+//                                qreal dr, dg, db;
+//                                ambientColor.getRgbF(&ar, &ag, &ab);
+//                                diffuseColor.getRgbF(&dr, &dg, &db);
+//                                ambientColor.setRgbF((ar + dr * cosn) / 2, (ag + dg * cosn) / 2, (ab + db * cosn) / 2);
+//                                ambientColor.setRgbF(dr * 1, dg * 1, db * 1);
+//                                image->setPixelColor(x, y, ambientColor);
+//                                double lightCoeff = std::max(0., (p1[0] - camera[0]) * n[0] + (p1[1] - camera[1]) * n[1] + (p1[2] + 1) * n[2]);
+//                                QColor fillColor = materialMap[polygons[i].materialKey].ka;
+//                                qreal r = fillColor.redF() * lightCoeff;
+//                                qreal g = fillColor.greenF() * lightCoeff;
+//                                qreal b = fillColor.blueF() * lightCoeff;
 //                                fillColor.setRgbF(r, g, b);
+//                                buffer[y][x] = z;
 //                                image->setPixelColor(x, y, fillColor);
+                                // Debug polygon colors
+                                QColor fillColor;
+                                qreal r = w1 * 0 + w2 * 0 + w3 * 1;
+                                qreal g = w1 * 0 + w2 * 1 + w3 * 0;
+                                qreal b = w1 * 1 + w2 * 0 + w3 * 0;
+                                r *= z;
+                                g *= z;
+                                b *= z;
+                                buffer[x][y] = z;
+                                fillColor.setRgbF(r, g, b);
+                                image->setPixelColor(x, y, fillColor);
                             }
                         }
                     }

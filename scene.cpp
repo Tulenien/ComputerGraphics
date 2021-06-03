@@ -33,10 +33,10 @@ void Scene::setupImage()
         depthBuffer[i].clear();
     }
     depthBuffer.clear();
-    for (int i = 0; i < image->size().height(); i++)
+    for (int i = 0; i < image->size().width(); i++)
     {
         std::vector<double> temp;
-        for (int j = 0; j < image->size().width(); j++)
+        for (int j = 0; j < image->size().height(); j++)
         {
             temp.push_back(-qInf());
         }
