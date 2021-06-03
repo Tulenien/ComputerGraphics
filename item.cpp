@@ -450,7 +450,7 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
 
                 double area = edgeCheck(p1, p2, p3);
 
-                for (int y = y0; y <= y1; ++y)
+                for (int y = y0; y <= y1; y++)
                 {
                     for (int x = x0; x <= x1; x++)
                     {
@@ -466,11 +466,20 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                             w3 *= coeff;
                             double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
                             double z = 1 / oneOverZ;
-                            if (z < buffer[y][x])
+                            if (z > buffer[y][x])
                             {
                                 buffer[y][x] = z;
                                 image->setPixelColor(x, y, materialMap[polygons[i].materialKey].ka);
-                                //image->setPixelColor(y, x, QColor(i * 20, 0, 0));
+//                                QColor fillColor;
+//                                qreal r = w1 * 0 + w2 * 0 + w3 * 1;
+//                                qreal g = w1 * 0 + w2 * 1 + w3 * 0;
+//                                qreal b = w1 * 1 + w2 * 0 + w3 * 0;
+//                                r *= z;
+//                                g *= z;
+//                                b *= z;
+//                                buffer[y][x] = z;
+//                                fillColor.setRgbF(r, g, b);
+//                                image->setPixelColor(x, y, fillColor);
                             }
                         }
                     }

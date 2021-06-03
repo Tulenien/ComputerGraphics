@@ -38,7 +38,7 @@ void Scene::setupImage()
         std::vector<double> temp;
         for (int j = 0; j < image->size().width(); j++)
         {
-            temp.push_back(qInf());
+            temp.push_back(-qInf());
         }
         depthBuffer.push_back(temp);
     }
