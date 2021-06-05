@@ -78,15 +78,27 @@ void Settings::addItems()
 
 void Settings::deleteItem()
 {
-    for (int i = 0; i < ui->ItemListWdt->count(); i++)
+    if (ui->ItemListWdt->count() < 2)
     {
-        if (ui->ItemListWdt->item(i)->isSelected())
+        scene->deleteItem(0);
+        if (imenu)
         {
-            scene->deleteItem(i);
-            if (imenu && i == imenu->getCurrentIndex())
+            imenu->close();
+            imenu = nullptr;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < ui->ItemListWdt->count(); i++)
+        {
+            if (ui->ItemListWdt->item(i)->isSelected())
             {
-                imenu->close();
-                imenu = nullptr;
+                scene->deleteItem(i);
+                if (imenu && i == imenu->getCurrentIndex())
+                {
+                    imenu->close();
+                    imenu = nullptr;
+                }
             }
         }
     }
