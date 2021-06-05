@@ -46,7 +46,7 @@ public:
     void renderScene();
 
 private:
-    double imageWidth, imageHeight;
+    int imageWidth, imageHeight;
     double imageTop, imageRight, imageBottom, imageLeft;
     camera cam;
     QImage *image;

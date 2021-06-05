@@ -194,6 +194,7 @@ void Item::loadObj(const QString dir, const QString file)
     QString path = dir + "/" + file + ".obj";
     QFile objFile(path);
     QTextStream pipeline(&objFile);
+    pipeline.setCodec("Windows-1251");
     if (!objFile.open(QIODevice::ReadOnly))
     {
         qDebug() << "File not opened";
@@ -360,8 +361,7 @@ void Item::loadMtl(const QString path)
     mtlFile.close();
 }
 
-void Item::rasterise(const matrix &projection, const double &imageWidth,
-                     const double &imageHeight)
+void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight)
 {
     /* Projects points and normals,
        result stored in v(n)Perspective matrix
@@ -372,7 +372,7 @@ void Item::rasterise(const matrix &projection, const double &imageWidth,
         {
             {1, 0, 0, 0},
             {0, 1, 0, 0},
-            {0, 0, 1, 0},
+            {0, 0, -1, 0},
             {0, 0, 200, 1}
         };
     }
@@ -388,6 +388,7 @@ void Item::rasterise(const matrix &projection, const double &imageWidth,
     transform[3][1] = transY;
     transform[3][2] = transZ;
     multiplyMatrix(vPerspective, projection);
+
 
     // Convert to raster
     for (size_t i = 0; i < vPerspective.size(); i++)
@@ -405,13 +406,16 @@ void Item::rasterise(const matrix &projection, const double &imageWidth,
         vPerspective[i][1]++;
         vPerspective[i][0] *= 0.5 * imageWidth;
         vPerspective[i][1] *= 0.5 * imageHeight;
+        vPerspective[i][2] *= -1;
     }
 }
 
-void Item::render(matrix &buffer, QImage *&image, double width, double height)
+void Item::render(matrix &buffer, QImage *&image, int width, int height)
 {
     for (int i = 0; i < polygons.size(); i++)
     {
+        // Camera position, move to camera struct later
+        std::vector<double> camera = {0, 0, 0};
         // Polygon points
         std::vector<double> p1 = vPerspective[polygons[i].points[0]];
         std::vector<double> p2 = vPerspective[polygons[i].points[1]];
@@ -422,7 +426,6 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
          */
         std::vector<double> line1 = {(p2[0] - p1[0]), (p2[1] - p1[1]), (p2[2] - p1[2])};
         std::vector<double> line2 = {(p3[0] - p1[0]), (p3[1] - p1[1]), (p3[2] - p1[2])};
-        // y1 * z2 - z1 * y2, z1 * x2 - x1 * z2, x1 * y2 - y1 * x2
         std::vector<double> n =
         {
             {
@@ -436,78 +439,36 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
         n[0] *= ncoeff;
         n[1] *= ncoeff;
         n[2] *= ncoeff;
-        // We also need camera
-        std::vector<double> camera = {0, 0, 0};
+
         if (n[0] * (p1[0] - camera[0]) +
             n[1] * (p1[1] - camera[1]) +
             n[2] * (p1[2] - camera[2]) < 0.)
         {
-            // Find rectangle boundaries
+            // Find bounding box
             double xmin = std::min(p1[0], std::min(p2[0], p3[0]));
             double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
             double xmax = std::max(p1[0], std::max(p2[0], p3[0]));
             double ymax = std::max(p1[1], std::max(p2[1], p3[1]));
-            // The triangle is out of screen
+            // Polygon is out of screen
             if (!(xmin > width - 1 || xmax < 0 || ymin > height - 1 || ymax < 0))
             {
-                // Starting points
-//                int x0 = std::max(0, (int)floor(xmin));
-//                int x1 = std::min((int)width - 1, (int)floor(xmax));
-//                int y0 = std::max(0, (int)floor(ymin));
-//                int y1 = std::min((int)height - 1, (int)floor(ymax));
+                // Starting points of interpolation
                 int x0 = std::max(0, int(xmin));
-                int x1 = std::min(int(width) - 1, int(xmax));
+                int x1 = std::min(width - 1, int(xmax));
                 int y0 = std::max(0, int(ymin));
-                int y1 = std::min(int(height) - 1, int(ymax));
+                int y1 = std::min(height - 1, int(ymax));
 
                 double area = edgeCheck(p1, p2, p3);
-                /* Compute barycentric coordinates:
-                 * Reuse line1 and line2
-                 * Find a new point inside the triangle
-                point_t p4 = {(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2};
-                p4.x = p4.x + p3[0] / 2;
-                p4.y = p4.y + p3[1] / 2;
-                p4.z = p4.z + p3[2] / 2;
-                std::vector<double> line3 = {(p4.x - p1[0]), (p4.y - p1[1]), (p4.z - p1[2])};
-                double d00 = (line1[0] * line1[0] + line1[1] * line1[1] + line1[2] * line1[2]);
-                double d01 = (line1[0] * line2[0] + line1[1] * line2[1] + line1[2] * line2[2]);
-                double d11 = (line2[0] * line2[0] + line2[1] * line2[1] + line2[2] * line2[2]);
-                double d20 = (line3[0] * line1[0] + line3[1] * line1[1] + line3[2] * line1[2]);
-                double d21 = (line3[0] * line2[0] + line3[1] * line2[1] + line3[2] * line2[2]);
-                double invDenom = 1. / (d00 * d11 - d01 * d01);
-                double v = (d11 * d20 - d01 * d21) * invDenom;
-                double w = (d00 * d21 - d01 * d20) * invDenom;
-                double u = 1. - v - w;
-                // Points normals
-                std::vector<double> n1 = vPerspective[polygons[i].normals[0]];
-                std::vector<double> n2 = vPerspective[polygons[i].normals[1]];
-                std::vector<double> n3 = vPerspective[polygons[i].normals[2]];
-                // Rewrite n with new hit normal
-                n[0] = n1[0] * w + n2[0] * u + n3[0] * v;
-                n[1] = n1[1] * w + n2[1] * u + n3[1] * v;
-                n[2] = n1[2] * w + n2[2] * u + n3[2] * v;
-                */
+
+                // Find
                 std::vector<double> n1 = nPerspective[polygons[i].normals[0]];
                 std::vector<double> n2 = nPerspective[polygons[i].normals[1]];
                 std::vector<double> n3 = nPerspective[polygons[i].normals[2]];
-                double invLen = 1 / sqrt(n1[0] * n1[0] + n1[1] * n1[1] + n1[2] * n1[2]);
-                n1[0] *= invLen;
-                n1[1] *= invLen;
-                n1[2] *= invLen;
-                invLen = 1 / sqrt(n2[0] * n2[0] + n2[1] * n2[1] + n2[2] * n2[2]);
-                n2[0] *= invLen;
-                n2[1] *= invLen;
-                n2[2] *= invLen;
-                invLen = 1 / sqrt(n3[0] * n3[0] + n3[1] * n3[1] + n3[2] * n3[2]);
-                n3[0] *= invLen;
-                n3[1] *= invLen;
-                n3[2] *= invLen;
                 for (int y = y0; y <= y1; y++)
                 {
                     for (int x = x0; x <= x1; x++)
                     {
-//                        std::vector<double> sample = {x + 0.5, y + 0.5, 0.};
-                        std::vector<double> sample = {x + 0., y + 0., 0.};
+                        std::vector<double> sample = {x + 0.5, y + 0.5, 0.};
                         double w1 = edgeCheck(p2, p3, sample);
                         double w2 = edgeCheck(p3, p1, sample);
                         double w3 = edgeCheck(p1, p2, sample);
@@ -519,38 +480,31 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
                             w3 *= coeff;
                             double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
                             double z = 1 / oneOverZ;
-                            if (z > buffer[x][y])
+                            if (z < buffer[x][y])
                             {
-//                                buffer[x][y] = z;
-//                                double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
-//                                QColor ambientColor = materialMap[polygons[i].materialKey].ka;
-//                                QColor diffuseColor = materialMap[polygons[i].materialKey].kd;
-//                                qreal ar, ag, ab;
-//                                qreal dr, dg, db;
-//                                ambientColor.getRgbF(&ar, &ag, &ab);
-//                                diffuseColor.getRgbF(&dr, &dg, &db);
-//                                ambientColor.setRgbF((ar + dr * cosn) / 2, (ag + dg * cosn) / 2, (ab + db * cosn) / 2);
-//                                ambientColor.setRgbF(dr * 1, dg * 1, db * 1);
-//                                image->setPixelColor(x, y, ambientColor);
-//                                double lightCoeff = std::max(0., (p1[0] - camera[0]) * n[0] + (p1[1] - camera[1]) * n[1] + (p1[2] + 1) * n[2]);
-//                                QColor fillColor = materialMap[polygons[i].materialKey].ka;
-//                                qreal r = fillColor.redF() * lightCoeff;
-//                                qreal g = fillColor.greenF() * lightCoeff;
-//                                qreal b = fillColor.blueF() * lightCoeff;
-//                                fillColor.setRgbF(r, g, b);
-//                                buffer[y][x] = z;
-//                                image->setPixelColor(x, y, fillColor);
-                                // Debug polygon colors
-                                QColor fillColor;
-                                qreal r = w1 * 0 + w2 * 0 + w3 * 1;
-                                qreal g = w1 * 0 + w2 * 1 + w3 * 0;
-                                qreal b = w1 * 1 + w2 * 0 + w3 * 0;
-                                r *= z;
-                                g *= z;
-                                b *= z;
                                 buffer[x][y] = z;
-                                fillColor.setRgbF(r, g, b);
-                                image->setPixelColor(x, y, fillColor);
+                                double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
+//                                double cosn = w1 * (n1[0] + n1[1] + n1[2]) + w2 * (n2[0] + n2[1] + n2[2]) + w3 * (n3[0] + n3[1] + n3[2]);
+                                QColor ambientColor = materialMap[polygons[i].materialKey].ka;
+                                QColor diffuseColor = materialMap[polygons[i].materialKey].kd;
+                                qreal ar, ag, ab;
+                                qreal dr, dg, db;
+                                ambientColor.getRgbF(&ar, &ag, &ab);
+                                diffuseColor.getRgbF(&dr, &dg, &db);
+                                ambientColor.setRgbF((ar + dr * cosn) / 2, (ag + dg * cosn) / 2, (ab + db * cosn) / 2);
+                                image->setPixelColor(x, y, ambientColor);
+                                /* Debug polygons
+                                    QColor fillColor;
+                                    qreal r = w1 * 0 + w2 * 0 + w3 * 1;
+                                    qreal g = w1 * 0 + w2 * 1 + w3 * 0;
+                                    qreal b = w1 * 1 + w2 * 0 + w3 * 0;
+                                    r *= z;
+                                    g *= z;
+                                    b *= z;
+                                    buffer[x][y] = z;
+                                    fillColor.setRgbF(r, g, b);
+                                    image->setPixelColor(x, y, fillColor);
+                                */
                             }
                         }
                     }
@@ -558,42 +512,45 @@ void Item::render(matrix &buffer, QImage *&image, double width, double height)
             }
         }
     }
-//    QColor line_color(0, 0, 0);
-//    for (size_t i = 0; i < vPerspective.size() - 1; i++)
-//    {
-//        for (size_t j = i + 1; j < vPerspective.size(); j++)
-//        {
-//            int x0 = vPerspective[i][0];
-//            int x1 = vPerspective[j][0];
-//            int y0 = vPerspective[i][1];
-//            int y1 = vPerspective[j][1];
-//            const int dx = abs(x1 - x0);
-//            const int dy = abs(y1 - y0);
-//            const int signX = x0 < x1 ? 1 : -1;
-//            const int signY = y0 < y1 ? 1 : -1;
-//            int error = dx - dy;
-//            int double_error = 0;
-//            image->setPixel(x1, y1, line_color.rgba());
-//            while(x0 != x1 || y0 != y1)
-//            {
-//                image->setPixel(x0, y0, line_color.rgba());
-//                double_error = error << 1;
-//                if (double_error > -dy)
-//                {
-//                    error -= dy;
-//                    x0 += signX;
-//                }
-//                if (double_error < dx)
-//                {
-//                    error += dx;
-//                    y0 += signY;
-//                }
-//            }
-//        }
-//    }
+/* Flat Bresenhem (use later)
+    QColor line_color(0, 0, 0);
+    for (size_t i = 0; i < vPerspective.size() - 1; i++)
+    {
+        for (size_t j = i + 1; j < vPerspective.size(); j++)
+        {
+            int x0 = vPerspective[i][0];
+            int x1 = vPerspective[j][0];
+            int y0 = vPerspective[i][1];
+            int y1 = vPerspective[j][1];
+            const int dx = abs(x1 - x0);
+            const int dy = abs(y1 - y0);
+            const int signX = x0 < x1 ? 1 : -1;
+            const int signY = y0 < y1 ? 1 : -1;
+            int error = dx - dy;
+            int double_error = 0;
+            image->setPixel(x1, y1, line_color.rgba());
+            while(x0 != x1 || y0 != y1)
+            {
+                image->setPixel(x0, y0, line_color.rgba());
+                double_error = error << 1;
+                if (double_error > -dy)
+                {
+                    error -= dy;
+                    x0 += signX;
+                }
+                if (double_error < dx)
+                {
+                    error += dx;
+                    y0 += signY;
+                }
+            }
+        }
+    }
+*/
 }
 
 double Item::edgeCheck(const std::vector<double> &a, const std::vector<double> &b, const std::vector<double> &c)
 {
-    return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
+//    return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
+    return (a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) * (b[0] - c[0]);
 }

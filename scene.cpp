@@ -27,7 +27,7 @@ void Scene::setupImage()
 {
     image->fill(QColor(255, 255, 255));
     // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
-    cam = {90, 90, 20, 24, 18, 1, 10000};
+    cam = {90, 90, 20, 24, 18, 1, 1000};
     for (size_t i = 0; i < depthBuffer.size(); i++)
     {
         depthBuffer[i].clear();
@@ -38,7 +38,7 @@ void Scene::setupImage()
         std::vector<double> temp;
         for (int j = 0; j < image->size().height(); j++)
         {
-            temp.push_back(-qInf());
+            temp.push_back(qInf());
         }
         depthBuffer.push_back(temp);
     }
@@ -125,13 +125,12 @@ const matrix Scene::computeProjectionMatrix()
 {
     double scale = 1;//1 / tanh(cam.fovX * 0.5 * PI / 180);
     double a = 1;//imageWidth / imageHeight;
-    // World to camera transformation
     double q = cam.far / (cam.far - cam.near);
     const matrix projection =
     {
         {a * scale, 0, 0, 0},
         {0, scale, 0, 0},
-        {0, 0, q, 1},
+        {0, 0, -q, -1},
         {0, 0, -cam.near * q, 0}
     };
     return projection;

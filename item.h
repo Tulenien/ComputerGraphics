@@ -61,9 +61,8 @@ public:
     void rotateOX(double angle);
     // Self-rotate
     void spin(double angle);
-    void rasterise(const matrix &projection, const double &imageWidth,
-                   const double &imageHeight);
-    void render(matrix &buffer, QImage *&image, double width, double height);
+    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight);
+    void render(matrix &buffer, QImage *&image, int width, int height);
 
 private:
     // Starting points matrix
