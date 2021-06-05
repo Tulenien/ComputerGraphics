@@ -16,6 +16,7 @@ public:
     explicit itemMenu(QWidget *parent = nullptr);
     ~itemMenu();
     void setCurrentIndex(int index);
+    int getCurrentIndex();
     void setScene(Scene *&scene);
 
 private:

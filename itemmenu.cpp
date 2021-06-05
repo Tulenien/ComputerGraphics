@@ -50,6 +50,11 @@ void itemMenu::setCurrentIndex(int index)
     currentIndex = index;
 }
 
+int itemMenu::getCurrentIndex()
+{
+    return currentIndex;
+}
+
 void itemMenu::setScene(Scene *&scene)
 {
     this->scene = scene;

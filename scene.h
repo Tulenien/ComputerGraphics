@@ -34,6 +34,7 @@ public:
     Scene(QWidget *parent);
     void addItem(QString dir, QString item);
     void deleteItem(int index);
+    void deleteItems();
     void setSize(double &width, double &length, double &height);
     double getWidth();
     double getLength();

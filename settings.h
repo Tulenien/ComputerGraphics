@@ -30,6 +30,7 @@ private:
 private slots:
     void addItems();
     void deleteItem();
+    void deleteAllItems();
     void sceneSizeChanged();
     void showScene();
     void openItemMenu(QListWidgetItem *item);

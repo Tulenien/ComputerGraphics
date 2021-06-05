@@ -1,7 +1,5 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "settings.h"
-
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -17,7 +15,16 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionNew_scene_triggered()
 {
-    Settings *windowSettings = new Settings();
+    if (windowSettings)
+    {
+        windowSettings->deleteLater();
+    }
+    windowSettings = new Settings();
     windowSettings->scene = ui->scene;
     windowSettings->show();
+}
+
+void MainWindow::on_actionScene_triggered()
+{
+    if (windowSettings) windowSettings->show();
 }

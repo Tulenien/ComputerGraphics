@@ -38,12 +38,18 @@
      <string>File</string>
     </property>
     <addaction name="actionNew_scene"/>
+    <addaction name="actionScene"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
   <action name="actionNew_scene">
    <property name="text">
     <string>New scene</string>
+   </property>
+  </action>
+  <action name="actionScene">
+   <property name="text">
+    <string>Scene</string>
    </property>
   </action>
  </widget>

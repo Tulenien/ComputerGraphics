@@ -55,6 +55,12 @@ void Scene::deleteItem(int index)
     renderScene();
 }
 
+void Scene::deleteItems()
+{
+    items.clear();
+    renderScene();
+}
+
 double Scene::getWidth()
 {
     return width;

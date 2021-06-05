@@ -23,6 +23,8 @@ Settings::Settings(QWidget *parent) :
 
 Settings::~Settings()
 {
+    ui->ItemListWdt->selectAll();
+    deleteAllItems();
     delete ui;
 }
 
@@ -81,9 +83,23 @@ void Settings::deleteItem()
         if (ui->ItemListWdt->item(i)->isSelected())
         {
             scene->deleteItem(i);
+            if (imenu && i == imenu->getCurrentIndex())
+            {
+                imenu->close();
+                imenu = nullptr;
+            }
         }
     }
     qDeleteAll(ui->ItemListWdt->selectedItems());
+}
+
+void Settings::deleteAllItems()
+{
+    scene->deleteItems();
+    if (imenu)
+    {
+        imenu->close();
+    }
 }
 
 void Settings::sceneSizeChanged()

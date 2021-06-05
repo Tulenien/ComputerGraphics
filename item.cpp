@@ -373,7 +373,7 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
             {1, 0, 0, 0},
             {0, 1, 0, 0},
             {0, 0, -1, 0},
-            {0, 0, 200, 1}
+            {0, 0, -200, 1} // Z offset should be negative!!!
         };
     }
     multiplyMatrix(vOriginal, transform, vPerspective);
