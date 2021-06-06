@@ -3,6 +3,7 @@
 Item::Item(QString dir, QString file)
 {
     // Load mtl file inside
+    isClicked = false;
     loadObj(dir, file);
 }
 
@@ -410,7 +411,7 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
     }
 }
 
-void Item::render(matrix &buffer, QImage *&image, int width, int height)
+void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height)
 {
     for (int i = 0; i < polygons.size(); i++)
     {
@@ -493,6 +494,8 @@ void Item::render(matrix &buffer, QImage *&image, int width, int height)
                                 diffuseColor.getRgbF(&dr, &dg, &db);
                                 ambientColor.setRgbF((ar + dr * cosn) / 2, (ag + dg * cosn) / 2, (ab + db * cosn) / 2);
                                 image->setPixelColor(x, y, ambientColor);
+                                QString key = QString::number(x) + "." + QString::number(y);
+                                clickSearch[key] = this;
                                 /* Debug polygons
                                     QColor fillColor;
                                     qreal r = w1 * 0 + w2 * 0 + w3 * 1;
@@ -553,4 +556,9 @@ double Item::edgeCheck(const std::vector<double> &a, const std::vector<double> &
 {
 //    return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
     return (a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) * (b[0] - c[0]);
+}
+
+void Item::changeIsClicked()
+{
+    isClicked = !isClicked;
 }

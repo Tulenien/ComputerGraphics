@@ -47,6 +47,8 @@ struct material
     double ns;    // Focus of specular highlights
 };
 
+struct XY { int x, y; };
+
 class Item
 {
 public:
@@ -62,10 +64,11 @@ public:
     // Self-rotate
     void spin(double angle);
     void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight);
-    void render(matrix &buffer, QImage *&image, int width, int height);
+    void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height);
+    void changeIsClicked();
 
 private:
-    // Starting points matrix
+    bool isClicked;
     matrix vOriginal, nOriginal;
     matrix transform;
     matrix vPerspective, nPerspective;
