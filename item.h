@@ -65,10 +65,12 @@ public:
     void spin(double angle);
     void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight);
     void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height);
-    void changeIsClicked();
+    bool changeIsClicked();
+    void outline(QImage *&image);
 
 private:
-    bool isClicked;
+    int ldx, ldy, rux, ruy;
+    bool isClicked = false;
     matrix vOriginal, nOriginal;
     matrix transform;
     matrix vPerspective, nPerspective;

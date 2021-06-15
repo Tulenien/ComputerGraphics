@@ -146,10 +146,16 @@ const matrix Scene::computeProjectionMatrix()
 void Scene::mousePressEvent(QMouseEvent *event)
 {
     QString key = QString::number(event->x()) + "." + QString::number(event->y());
-//    qDebug() << key << " " << clickSearch[key];
     if (clickSearch[key])
     {
-        // Right after selected item rendered, change clicked
-        clickSearch[key]->changeIsClicked();
+        bool status = clickSearch[key]->changeIsClicked();
+        if (status)
+        {
+            clickSearch[key]->outline(image);
+            setPixmap(QPixmap::fromImage(*image));
+            this->show();
+        }
+        else renderScene();
     }
 }
+
