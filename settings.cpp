@@ -52,6 +52,7 @@ void Settings::loadItemCatalog(const QString &catalogPath)
 
 void Settings::addItems()
 {
+    int count = 0;
     for (int i = 0; i < ui->itemCatalogWdt->topLevelItemCount(); i++)
     {
         QTreeWidgetItem *item = ui->itemCatalogWdt->topLevelItem(i);
@@ -70,8 +71,14 @@ void Settings::addItems()
                 ui->ItemListWdt->insertItem(0, listItem);
                 item->child(j)->setCheckState(0, Qt::Unchecked);
                 scene->addItem(*catalogPath + "/" + item->text(0), itemName);
+                count++;
             }
         }
+    }
+    if (imenu)
+    {
+        int index = imenu->getCurrentIndex();
+        imenu->setCurrentIndex(index + count);
     }
     scene->renderScene();
 }
