@@ -373,11 +373,23 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
         {
             {1, 0, 0, 0},
             {0, 1, 0, 0},
-            {0, 0, -1, 0},
-            {0, 0, -200, 1} // Z offset should be negative!!!
+//            {0, 0, -1, 0},
+//            {0, 0, -200, 1}
+            {0, 0, 1, 0},
+            {0, 0, 0, 1}
         };
     }
-    multiplyMatrix(vOriginal, transform, vPerspective);
+    // 90 degrees x-rotation
+    const matrix camera =
+    {
+        {1, 0, 0, 0},
+        {0, 0, 1, 0},
+        {0, -1, 0, 0},
+        {0, 0, -800, 1} // Z offset should be negative!!!
+    };
+    matrix temp;
+    multiplyMatrix(vOriginal, transform, temp);
+    multiplyMatrix(temp, camera, vPerspective);
     double transX = transform[3][0];
     double transY = transform[3][1];
     double transZ = transform[3][2];
