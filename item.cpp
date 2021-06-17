@@ -3,6 +3,7 @@
 Item::Item(QString dir, QString file)
 {
     // Load mtl file inside
+    isClicked = false;
     loadObj(dir, file);
 }
 
@@ -372,11 +373,23 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
         {
             {1, 0, 0, 0},
             {0, 1, 0, 0},
-            {0, 0, -1, 0},
-            {0, 0, -200, 1} // Z offset should be negative!!!
+//            {0, 0, -1, 0},
+//            {0, 0, -200, 1}
+            {0, 0, 1, 0},
+            {0, 0, 0, 1}
         };
     }
-    multiplyMatrix(vOriginal, transform, vPerspective);
+    // 90 degrees x-rotation
+    const matrix camera =
+    {
+        {1, 0, 0, 0},
+        {0, 0, 1, 0},
+        {0, -1, 0, 0},
+        {0, 0, -800, 1} // Z offset should be negative!!!
+    };
+    matrix temp;
+    multiplyMatrix(vOriginal, transform, temp);
+    multiplyMatrix(temp, camera, vPerspective);
     double transX = transform[3][0];
     double transY = transform[3][1];
     double transZ = transform[3][2];
@@ -388,7 +401,6 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
     transform[3][1] = transY;
     transform[3][2] = transZ;
     multiplyMatrix(vPerspective, projection);
-
 
     // Convert to raster
     for (size_t i = 0; i < vPerspective.size(); i++)
@@ -410,8 +422,12 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
     }
 }
 
-void Item::render(matrix &buffer, QImage *&image, int width, int height)
+void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height)
 {
+    ldx = width;
+    ldy = height;
+    rux = 0;
+    ruy = 0;
     for (int i = 0; i < polygons.size(); i++)
     {
         // Camera position, move to camera struct later
@@ -449,7 +465,6 @@ void Item::render(matrix &buffer, QImage *&image, int width, int height)
             double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
             double xmax = std::max(p1[0], std::max(p2[0], p3[0]));
             double ymax = std::max(p1[1], std::max(p2[1], p3[1]));
-            // Polygon is out of screen
             if (!(xmin > width - 1 || xmax < 0 || ymin > height - 1 || ymax < 0))
             {
                 // Starting points of interpolation
@@ -457,6 +472,11 @@ void Item::render(matrix &buffer, QImage *&image, int width, int height)
                 int x1 = std::min(width - 1, int(xmax));
                 int y0 = std::max(0, int(ymin));
                 int y1 = std::min(height - 1, int(ymax));
+
+                if (x0 < ldx) ldx = x0;
+                if (x1 > rux) rux = x1;
+                if (y0 < ldy) ldy = y0;
+                if (y1 > ruy) ruy = y1;
 
                 double area = edgeCheck(p1, p2, p3);
 
@@ -493,6 +513,8 @@ void Item::render(matrix &buffer, QImage *&image, int width, int height)
                                 diffuseColor.getRgbF(&dr, &dg, &db);
                                 ambientColor.setRgbF((ar + dr * cosn) / 2, (ag + dg * cosn) / 2, (ab + db * cosn) / 2);
                                 image->setPixelColor(x, y, ambientColor);
+                                QString key = QString::number(x) + "." + QString::number(y);
+                                clickSearch[key] = this;
                                 /* Debug polygons
                                     QColor fillColor;
                                     qreal r = w1 * 0 + w2 * 0 + w3 * 1;
@@ -512,45 +534,59 @@ void Item::render(matrix &buffer, QImage *&image, int width, int height)
             }
         }
     }
-/* Flat Bresenhem (use later)
-    QColor line_color(0, 0, 0);
-    for (size_t i = 0; i < vPerspective.size() - 1; i++)
-    {
-        for (size_t j = i + 1; j < vPerspective.size(); j++)
-        {
-            int x0 = vPerspective[i][0];
-            int x1 = vPerspective[j][0];
-            int y0 = vPerspective[i][1];
-            int y1 = vPerspective[j][1];
-            const int dx = abs(x1 - x0);
-            const int dy = abs(y1 - y0);
-            const int signX = x0 < x1 ? 1 : -1;
-            const int signY = y0 < y1 ? 1 : -1;
-            int error = dx - dy;
-            int double_error = 0;
-            image->setPixel(x1, y1, line_color.rgba());
-            while(x0 != x1 || y0 != y1)
-            {
-                image->setPixel(x0, y0, line_color.rgba());
-                double_error = error << 1;
-                if (double_error > -dy)
-                {
-                    error -= dy;
-                    x0 += signX;
-                }
-                if (double_error < dx)
-                {
-                    error += dx;
-                    y0 += signY;
-                }
-            }
-        }
-    }
-*/
+    if (isClicked) outline(image);
 }
 
 double Item::edgeCheck(const std::vector<double> &a, const std::vector<double> &b, const std::vector<double> &c)
 {
 //    return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
     return (a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) * (b[0] - c[0]);
+}
+
+bool Item::changeIsClicked()
+{
+    isClicked = !isClicked;
+    return isClicked;
+}
+
+void Item::outline(QImage *&image)
+{
+    // Connect bounding box
+    QColor line_color(0, 0, 0);
+    int x0 = ldx;
+    int y0 = ldy;
+    int r, g, b;
+    int direction[4][2] = {{ldx, ruy}, {rux, ruy}, {rux, ldy}, {ldx, ldy}};
+    for (int i = 0; i < 4; i++)
+    {
+        int x1 = direction[i][0];
+        int y1 = direction[i][1];
+        int dx = abs(x1 - x0);
+        int dy = abs(y1 - y0);
+        int signX = x0 < x1 ? 1 : -1;
+        int signY = y0 < y1 ? 1 : -1;
+        int error = dx - dy;
+        int double_error = 0;
+        image->setPixel(x1, y1, line_color.rgba());
+        while(x0 != x1 || y0 != y1)
+        {
+            QColor contrastColor(image->pixel(x0, y0));
+            contrastColor.getRgb(&r, &g, &b);
+            contrastColor.setRgb(127 - r, 127 - g, 127 - b);
+            image->setPixel(x0, y0, contrastColor.rgba());
+            double_error = error << 1;
+            if (double_error > -dy)
+            {
+                error -= dy;
+                x0 += signX;
+            }
+            if (double_error < dx)
+            {
+                error += dx;
+                y0 += signY;
+            }
+        }
+        x0 = x1;
+        y0 = y1;
+    }
 }

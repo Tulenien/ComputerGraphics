@@ -52,6 +52,7 @@ void Settings::loadItemCatalog(const QString &catalogPath)
 
 void Settings::addItems()
 {
+    int count = 0;
     for (int i = 0; i < ui->itemCatalogWdt->topLevelItemCount(); i++)
     {
         QTreeWidgetItem *item = ui->itemCatalogWdt->topLevelItem(i);
@@ -70,23 +71,41 @@ void Settings::addItems()
                 ui->ItemListWdt->insertItem(0, listItem);
                 item->child(j)->setCheckState(0, Qt::Unchecked);
                 scene->addItem(*catalogPath + "/" + item->text(0), itemName);
+                count++;
             }
         }
+    }
+    if (imenu)
+    {
+        int index = imenu->getCurrentIndex();
+        imenu->setCurrentIndex(index + count);
     }
     scene->renderScene();
 }
 
 void Settings::deleteItem()
 {
-    for (int i = 0; i < ui->ItemListWdt->count(); i++)
+    if (ui->ItemListWdt->count() < 2)
     {
-        if (ui->ItemListWdt->item(i)->isSelected())
+        scene->deleteItem(0);
+        if (imenu)
         {
-            scene->deleteItem(i);
-            if (imenu && i == imenu->getCurrentIndex())
+            imenu->close();
+            imenu = nullptr;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < ui->ItemListWdt->count(); i++)
+        {
+            if (ui->ItemListWdt->item(i)->isSelected())
             {
-                imenu->close();
-                imenu = nullptr;
+                scene->deleteItem(i);
+                if (imenu && i == imenu->getCurrentIndex())
+                {
+                    imenu->close();
+                    imenu = nullptr;
+                }
             }
         }
     }

@@ -2,12 +2,10 @@
 #define SCENE_H
 
 #include <QLabel>
+#include <QMouseEvent>
 #include "item.h"
 
 /*TODO:
- * Add button to Show rendered
- * Add Update function
- * Put all methods of render into 'render'
  * Add 3D Clipping method
  */
 
@@ -52,6 +50,7 @@ private:
     camera cam;
     QImage *image;
     QVector<Item> items;
+    QMap<QString, Item *> clickSearch;
     matrix depthBuffer;
     double width, length, height;
 
@@ -60,6 +59,7 @@ private:
     void computeScreenCoordinates();
     void setupImage();
     const matrix computeProjectionMatrix();
+    void mousePressEvent(QMouseEvent *event);
 };
 
 #endif // SCENE_H

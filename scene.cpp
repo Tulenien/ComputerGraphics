@@ -42,6 +42,7 @@ void Scene::setupImage()
         }
         depthBuffer.push_back(temp);
     }
+    clickSearch.clear();
 }
 
 void Scene::addItem(QString dir, QString item)
@@ -98,7 +99,7 @@ void Scene::renderScene()
         for (int i = 0; i < items.size(); i++)
         {
             items[i].rasterise(projection, imageWidth, imageHeight);
-            items[i].render(depthBuffer, image, imageWidth, imageHeight);
+            items[i].render(depthBuffer, image, clickSearch, imageWidth, imageHeight);
         }
     }
     setPixmap(QPixmap::fromImage(*image));
@@ -141,3 +142,20 @@ const matrix Scene::computeProjectionMatrix()
     };
     return projection;
 }
+
+void Scene::mousePressEvent(QMouseEvent *event)
+{
+    QString key = QString::number(event->x()) + "." + QString::number(event->y());
+    if (clickSearch[key])
+    {
+        bool status = clickSearch[key]->changeIsClicked();
+        if (status)
+        {
+            clickSearch[key]->outline(image);
+            setPixmap(QPixmap::fromImage(*image));
+            this->show();
+        }
+        else renderScene();
+    }
+}
+
