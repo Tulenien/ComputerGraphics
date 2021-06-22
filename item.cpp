@@ -115,6 +115,26 @@ void Item::rotateOY(double angle)
     else multiplyMatrix(transform, rotate);
 }
 
+void Item::rotateOZ(double angle)
+{
+    double radAngle = angle * PI / 180.;
+    const matrix rotate =
+    {
+        {cos(radAngle), sin(radAngle), 0, 0},
+        {-sin(radAngle), cos(radAngle), 0, 0},
+        {0, 0, 1, 0},
+        {0, 0, 0, 1}
+    };
+    if(transform.empty())
+    {
+        for (std::size_t i = 0; i < 4; i++)
+        {
+                transform.push_back(rotate[i]);
+        }
+    }
+    else multiplyMatrix(transform, rotate);
+}
+
 void Item::move(double x, double y, double z)
 {
     matrix move =
@@ -150,10 +170,45 @@ point_t Item::centerXZ()
         0,
         (minZ + maxZ) * 0.5
     };
+    qDebug() << center.x << center.y << center.z;
     return center;
 }
 
-void Item::spin(double angle)
+point_t Item::centerYZ()
+{
+    matrix current;
+    multiplyMatrix(vOriginal, transform, current);
+    // Find min and max coordinates of y and z
+    double minY = current[0][1], maxY = current[0][1];
+    double minZ = current[0][2], maxZ = current[0][2];
+    // If only one point --> crash
+    for (std::size_t i = 1; i < current.size(); i++)
+    {
+        double currentY = current[i][1];
+        double currentZ = current[i][2];
+        if (currentY > maxY) maxY = currentY;
+        else if (currentY < minY) minY = currentY;
+        if (currentZ > maxZ) maxZ = currentZ;
+        else if (currentZ < minZ) minZ = currentZ;
+    }
+    point_t center =
+    {
+        0,
+        (minY + maxY) * 0.5,
+        (minZ + maxZ) * 0.5
+    };
+    qDebug() << center.x << center.y << center.z;
+    return center;
+}
+
+bool Item::compareViewModes(bool sceneMode)
+{
+    if (sceneMode == itemView)
+        return true;
+    return false;
+}
+
+void Item::spinOY(double angle)
 {
     double radAngle = angle * PI / 180.;
     point_t center = centerXZ();
@@ -178,14 +233,36 @@ void Item::spin(double angle)
         {0, 0, 1, 0},
         {center.x, 0, center.z, 1}
     };
-    if(transform.empty())
+    multiplyMatrix(transform, T);
+    multiplyMatrix(transform, rotate);
+    multiplyMatrix(transform, antiT);
+}
+
+void Item::spinOX(double radAngle)
+{
+    point_t center = centerYZ();
+    const matrix T =
     {
-        for (std::size_t i = 0; i < 4; i++)
-        {
-            transform.push_back(T[i]);
-        }
-    }
-    else multiplyMatrix(transform, T);
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {0, -center.y, -center.z, 1} // Possibly other sign on z...
+    };
+    const matrix rotate =
+    {
+        {1, 0, 0, 0},
+        {0, cos(radAngle), -sin(radAngle), 0},
+        {0, sin(radAngle), cos(radAngle), 0},
+        {0, 0, 0, 1}
+    };
+    const matrix antiT =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {0, center.y, center.z, 1} // Possibly other sign on z...
+    };
+    multiplyMatrix(transform, T);
     multiplyMatrix(transform, rotate);
     multiplyMatrix(transform, antiT);
 }
@@ -362,7 +439,7 @@ void Item::loadMtl(const QString path)
     mtlFile.close();
 }
 
-void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight)
+void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double viewRadRotation)
 {
     /* Projects points and normals,
        result stored in v(n)Perspective matrix
@@ -373,23 +450,17 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
         {
             {1, 0, 0, 0},
             {0, 1, 0, 0},
-//            {0, 0, -1, 0},
-//            {0, 0, -200, 1}
-            {0, 0, 1, 0},
-            {0, 0, 0, 1}
+            {0, 0, -1, 0},
+            {0, 0, -200, 1}
         };
     }
-    // 90 degrees x-rotation
-    const matrix camera =
+    // If infinity passed no need to rotate view
+    if (!qIsInf(viewRadRotation))
     {
-        {1, 0, 0, 0},
-        {0, 0, 1, 0},
-        {0, -1, 0, 0},
-        {0, 0, -800, 1} // Z offset should be negative!!!
-    };
-    matrix temp;
-    multiplyMatrix(vOriginal, transform, temp);
-    multiplyMatrix(temp, camera, vPerspective);
+        spinOX(viewRadRotation);
+        itemView = !itemView;
+    }
+    multiplyMatrix(vOriginal, transform, vPerspective);
     double transX = transform[3][0];
     double transY = transform[3][1];
     double transZ = transform[3][2];
@@ -503,8 +574,8 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
                             if (z < buffer[x][y])
                             {
                                 buffer[x][y] = z;
-                                double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
-//                                double cosn = w1 * (n1[0] + n1[1] + n1[2]) + w2 * (n2[0] + n2[1] + n2[2]) + w3 * (n3[0] + n3[1] + n3[2]);
+//                                double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
+                                double cosn = w1 * (n1[0] + n1[1] + n1[2]) + w2 * (n2[0] + n2[1] + n2[2]) + w3 * (n3[0] + n3[1] + n3[2]);
                                 QColor ambientColor = materialMap[polygons[i].materialKey].ka;
                                 QColor diffuseColor = materialMap[polygons[i].materialKey].kd;
                                 qreal ar, ag, ab;

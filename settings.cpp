@@ -19,6 +19,7 @@ Settings::Settings(QWidget *parent) :
     connect(ui->deleteItemButton, &QPushButton::released, this, &Settings::deleteItem);
     connect(ui->setSceneSize, &QPushButton::released, this, &Settings::sceneSizeChanged);
     connect(ui->ItemListWdt, &QListWidget::itemDoubleClicked, this, &Settings::openItemMenu);
+    connect(ui->changeModeBtn, &QPushButton::pressed, this, &Settings::changeViewMode);
 }
 
 Settings::~Settings()
@@ -52,6 +53,8 @@ void Settings::loadItemCatalog(const QString &catalogPath)
 
 void Settings::addItems()
 {
+    bool viewMode = scene->getViewMode();
+    if (!viewMode) scene->changeViewMode();
     int count = 0;
     for (int i = 0; i < ui->itemCatalogWdt->topLevelItemCount(); i++)
     {
@@ -146,5 +149,17 @@ void Settings::openItemMenu(QListWidgetItem *item)
 
 void Settings::showScene()
 {
+    scene->renderScene();
+}
+
+void Settings::changeViewMode()
+{
+    bool mode = scene->getViewMode();
+    if (mode)
+    {
+        ui->changeModeBtn->setText("View mode");
+    }
+    else ui->changeModeBtn->setText("Build mode");
+    scene->changeViewMode();
     scene->renderScene();
 }

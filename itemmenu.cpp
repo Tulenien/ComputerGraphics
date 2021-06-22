@@ -30,12 +30,12 @@ itemMenu::itemMenu(QWidget *parent) :
     // Main direction is AntiClockwise
     connect(ui->rotateClockwise, &QPushButton::pressed, [this]()
     {
-        scene->getItemByIndex(currentIndex).spin(-ui->angleInput->text().toDouble());
+        scene->getItemByIndex(currentIndex).spinOY(-ui->angleInput->text().toDouble());
         scene->renderScene();
     });
     connect(ui->rotateAClockwiseBtn, &QPushButton::pressed, [this]()
     {
-        scene->getItemByIndex(currentIndex).spin(ui->angleInput->text().toDouble());
+        scene->getItemByIndex(currentIndex).spinOY(ui->angleInput->text().toDouble());
         scene->renderScene();
     });
 }

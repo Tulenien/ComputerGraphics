@@ -54,16 +54,18 @@ class Item
 public:
     Item(QString dir, QString file);
     point_t centerXZ();
-    void setDepthBuffer(matrix *depthBuffer);
-    void setImage(QImage *&image);
+    point_t centerYZ();
+    bool compareViewModes(bool sceneMode);
 
     void move(double x, double y, double z);
     // Rotate with scene
     void rotateOY(double angle);
     void rotateOX(double angle);
+    void rotateOZ(double angle);
     // Self-rotate
-    void spin(double angle);
-    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight);
+    void spinOY(double angle);
+    void spinOX(double radAngle);
+    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double viewRadRotation);
     void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height);
     bool changeIsClicked();
     void outline(QImage *&image);
@@ -71,6 +73,7 @@ public:
 private:
     int ldx, ldy, rux, ruy;
     bool isClicked = false;
+    bool itemView = false;
     matrix vOriginal, nOriginal;
     matrix transform;
     matrix vPerspective, nPerspective;

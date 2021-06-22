@@ -34,9 +34,11 @@ public:
     void deleteItem(int index);
     void deleteItems();
     void setSize(double &width, double &length, double &height);
+    void changeViewMode();
     double getWidth();
     double getLength();
     double getHeight();
+    bool getViewMode();
     // Add rotation
     void rotateSceneOX(double angle);
     void rotateSceneOY(double angle);
@@ -45,6 +47,7 @@ public:
     void renderScene();
 
 private:
+    bool viewMode = true;
     int imageWidth, imageHeight;
     double imageTop, imageRight, imageBottom, imageLeft;
     camera cam;

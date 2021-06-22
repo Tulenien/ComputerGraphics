@@ -16,15 +16,19 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="1">
-      <widget class="QPushButton" name="zPosBtn">
+     <item row="1" column="2">
+      <widget class="QPushButton" name="xPosBtn">
        <property name="text">
-        <string>+z</string>
+        <string>+x</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QLineEdit" name="coordinateInput"/>
+     <item row="3" column="2">
+      <widget class="QPushButton" name="rotateClockwise">
+       <property name="text">
+        <string>Rotate Clockwise</string>
+       </property>
+      </widget>
      </item>
      <item row="2" column="1">
       <widget class="QPushButton" name="zNegBtn">
@@ -40,10 +44,13 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="xPosBtn">
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="angleInput"/>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="zPosBtn">
        <property name="text">
-        <string>+x</string>
+        <string>+z</string>
        </property>
       </widget>
      </item>
@@ -54,15 +61,8 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="rotateClockwise">
-       <property name="text">
-        <string>Rotate Clockwise</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QLineEdit" name="angleInput"/>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="coordinateInput"/>
      </item>
     </layout>
    </item>

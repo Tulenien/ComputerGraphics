@@ -27,7 +27,7 @@ void Scene::setupImage()
 {
     image->fill(QColor(255, 255, 255));
     // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
-    cam = {90, 90, 20, 24, 18, 1, 1000};
+    cam = {90, 90, 20, 24, 18, 1, 10000};
     for (size_t i = 0; i < depthBuffer.size(); i++)
     {
         depthBuffer[i].clear();
@@ -84,6 +84,16 @@ void Scene::setSize(double &width, double &length, double &height)
     this->height = height;
 }
 
+void Scene::changeViewMode()
+{
+    viewMode = !viewMode;
+}
+
+bool Scene::getViewMode()
+{
+    return viewMode;
+}
+
 Item &Scene::getItemByIndex(int index)
 {
     return items[items.size() - index - 1];
@@ -96,9 +106,16 @@ void Scene::renderScene()
     {
         //computeScreenCoordinates();
         const matrix projection = computeProjectionMatrix();
+        double radAngle;
         for (int i = 0; i < items.size(); i++)
         {
-            items[i].rasterise(projection, imageWidth, imageHeight);
+            radAngle = -PI * 0.5;
+            if (!(items[i].compareViewModes(viewMode)))
+            {
+                if (!viewMode) radAngle *= -1;
+            }
+            else radAngle = qInf();
+            items[i].rasterise(projection, imageWidth, imageHeight, radAngle);
             items[i].render(depthBuffer, image, clickSearch, imageWidth, imageHeight);
         }
     }
