@@ -7,6 +7,7 @@
 #include <QColor>
 #include <QDebug>
 #include <QImage>
+#include <algorithm>
 #include <QFileSystemModel>
 
 #define PI 3.14159265
@@ -47,14 +48,28 @@ struct material
     double ns;    // Focus of specular highlights
 };
 
+struct volumeBorder
+{
+    double minX, maxX;
+    double minY, maxY;
+    double minZ, maxZ;
+};
+
 struct XY { int x, y; };
 
 class Item
 {
 public:
     Item(QString dir, QString file);
+    // Delete centerXZ, centerYZ,
+    // Replace by getCenter and dynamicly change Borders
+    // when Item is rotated/ translated
+    // Use Z coordinates later to choose closest and farthest
+    // point and set Znear, Zfar with it
     point_t centerXZ();
     point_t centerYZ();
+    point_t getCenter();
+    void findBorders();
     bool compareViewModes(bool sceneMode);
 
     void move(double x, double y, double z);
@@ -71,9 +86,11 @@ public:
     void outline(QImage *&image);
 
 private:
+    // Border left-down and right-up screen coordinates
     int ldx, ldy, rux, ruy;
     bool isClicked = false;
     bool itemView = false;
+    volumeBorder borders;
     matrix vOriginal, nOriginal;
     matrix transform;
     matrix vPerspective, nPerspective;

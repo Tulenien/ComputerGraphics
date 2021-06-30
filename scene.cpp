@@ -27,7 +27,7 @@ void Scene::setupImage()
 {
     image->fill(QColor(255, 255, 255));
     // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
-    cam = {90, 90, 20, 24, 18, 1, 10000};
+    cam = {90, 90, 20, 24, 18, 10, 500};
     for (size_t i = 0; i < depthBuffer.size(); i++)
     {
         depthBuffer[i].clear();
@@ -125,10 +125,6 @@ void Scene::renderScene()
 
 void Scene::computeScreenCoordinates()
 {
-//    imageTop = cam.apertureWidth / 2 / cam.focalLength * cam.near;
-//    imageRight = cam.apertureHeight / 2 / cam.focalLength * cam.near;
-//    imageBottom = -imageTop;
-//    imageLeft = -imageRight;
     imageTop = imageHeight / 2 * cam.near;
     imageRight = imageWidth / 2 * cam.near;
     imageBottom = -imageTop;

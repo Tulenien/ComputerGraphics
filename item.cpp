@@ -201,6 +201,44 @@ point_t Item::centerYZ()
     return center;
 }
 
+point_t Item::getCenter()
+{
+    point_t center =
+    {
+        (borders.minX + borders.maxX) * 0.5,
+        (borders.minY + borders.maxY) * 0.5,
+        (borders.minZ + borders.maxZ) * 0.5,
+    };
+    return center;
+}
+
+void Item::findBorders()
+{
+    matrix current;
+    multiplyMatrix(vOriginal, transform, current);
+    double minX = current[0][0], maxX = current[0][0];
+    double minY = current[0][1], maxY = current[0][1];
+    double minZ = current[0][2], maxZ = current[0][2];
+    for (std::size_t i = 1; i < current.size(); i++)
+    {
+        double currentX = current[i][0];
+        double currentY = current[i][1];
+        double currentZ = current[i][2];
+        if (currentX > maxX) maxX = currentX;
+        else if (currentX < minX) minX = currentX;
+        if (currentY > maxY) maxY = currentY;
+        else if (currentY < minY) minY = currentY;
+        if (currentZ > maxZ) maxZ = currentZ;
+        else if (currentZ < minZ) minZ = currentZ;
+    }
+    borders =
+    {
+        minX, maxX,
+        minY, maxY,
+        minZ, maxZ,
+    };
+}
+
 bool Item::compareViewModes(bool sceneMode)
 {
     if (sceneMode == itemView)
@@ -455,11 +493,11 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
         };
     }
     // If infinity passed no need to rotate view
-    if (!qIsInf(viewRadRotation))
-    {
-        spinOX(viewRadRotation);
-        itemView = !itemView;
-    }
+//    if (!qIsInf(viewRadRotation))
+//    {
+//        spinOX(viewRadRotation);
+//        itemView = !itemView;
+//    }
     multiplyMatrix(vOriginal, transform, vPerspective);
     double transX = transform[3][0];
     double transY = transform[3][1];
@@ -487,6 +525,7 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
         vPerspective[i][0]++;
         vPerspective[i][1] *= -1;
         vPerspective[i][1]++;
+        //const int ratio = std::min(imageWidth, imageHeight);
         vPerspective[i][0] *= 0.5 * imageWidth;
         vPerspective[i][1] *= 0.5 * imageHeight;
         vPerspective[i][2] *= -1;
@@ -544,6 +583,7 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
                 int y0 = std::max(0, int(ymin));
                 int y1 = std::min(height - 1, int(ymax));
 
+                // Border coords
                 if (x0 < ldx) ldx = x0;
                 if (x1 > rux) rux = x1;
                 if (y0 < ldy) ldy = y0;
@@ -551,7 +591,6 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
 
                 double area = edgeCheck(p1, p2, p3);
 
-                // Find
                 std::vector<double> n1 = nPerspective[polygons[i].normals[0]];
                 std::vector<double> n2 = nPerspective[polygons[i].normals[1]];
                 std::vector<double> n3 = nPerspective[polygons[i].normals[2]];
@@ -574,8 +613,8 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
                             if (z < buffer[x][y])
                             {
                                 buffer[x][y] = z;
-//                                double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
-                                double cosn = w1 * (n1[0] + n1[1] + n1[2]) + w2 * (n2[0] + n2[1] + n2[2]) + w3 * (n3[0] + n3[1] + n3[2]);
+                                //double cosn = w1 * (n1[0] + n1[1] + n1[2]) + w2 * (n2[0] + n2[1] + n2[2]) + w3 * (n3[0] + n3[1] + n3[2]);
+                                double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
                                 QColor ambientColor = materialMap[polygons[i].materialKey].ka;
                                 QColor diffuseColor = materialMap[polygons[i].materialKey].kd;
                                 qreal ar, ag, ab;
