@@ -85,14 +85,7 @@ void Item::rotateOX(double angleOX)
         {0, -sin(radAngle), cos(radAngle), 0},
         {0, 0, 0, 1}
     };
-    if(transform.empty())
-    {
-        for (std::size_t i = 0; i < 4; i++)
-        {
-            transform.push_back(rotate[i]);
-        }
-    }
-    else multiplyMatrix(transform, rotate);
+    multiplyMatrix(transform, rotate);
 }
 
 void Item::rotateOY(double angle)
@@ -100,19 +93,12 @@ void Item::rotateOY(double angle)
     double radAngle = angle * PI / 180.;
     const matrix rotate =
     {
-        {cos(radAngle), 0, -sin(radAngle), 0},
+        {cos(radAngle), 0, sin(radAngle), 0},
         {0, 1, 0, 0},
-        {sin(radAngle), 0, cos(radAngle), 0},
+        {-sin(radAngle), 0, cos(radAngle), 0},
         {0, 0, 0, 1}
     };
-    if(transform.empty())
-    {
-        for (std::size_t i = 0; i < 4; i++)
-        {
-                transform.push_back(rotate[i]);
-        }
-    }
-    else multiplyMatrix(transform, rotate);
+    multiplyMatrix(transform, rotate);
 }
 
 void Item::rotateOZ(double angle)
@@ -125,14 +111,7 @@ void Item::rotateOZ(double angle)
         {0, 0, 1, 0},
         {0, 0, 0, 1}
     };
-    if(transform.empty())
-    {
-        for (std::size_t i = 0; i < 4; i++)
-        {
-                transform.push_back(rotate[i]);
-        }
-    }
-    else multiplyMatrix(transform, rotate);
+    multiplyMatrix(transform, rotate);
 }
 
 void Item::move(double x, double y, double z)
@@ -145,60 +124,6 @@ void Item::move(double x, double y, double z)
         {x, y, z, 1}
     };
     multiplyMatrix(transform, move);
-}
-
-point_t Item::centerXZ()
-{
-    matrix current;
-    multiplyMatrix(vOriginal, transform, current);
-    // Find min and max coordinates of x and z
-    double minX = current[0][0], maxX = current[0][0];
-    double minZ = current[0][2], maxZ = current[0][2];
-    // If only one point --> crash
-    for (std::size_t i = 1; i < current.size(); i++)
-    {
-        double currentX = current[i][0];
-        double currentZ = current[i][2];
-        if (currentX > maxX) maxX = currentX;
-        else if (currentX < minX) minX = currentX;
-        if (currentZ > maxZ) maxZ = currentZ;
-        else if (currentZ < minZ) minZ = currentZ;
-    }
-    point_t center =
-    {
-        (minX + maxX) * 0.5,
-        0,
-        (minZ + maxZ) * 0.5
-    };
-    qDebug() << center.x << center.y << center.z;
-    return center;
-}
-
-point_t Item::centerYZ()
-{
-    matrix current;
-    multiplyMatrix(vOriginal, transform, current);
-    // Find min and max coordinates of y and z
-    double minY = current[0][1], maxY = current[0][1];
-    double minZ = current[0][2], maxZ = current[0][2];
-    // If only one point --> crash
-    for (std::size_t i = 1; i < current.size(); i++)
-    {
-        double currentY = current[i][1];
-        double currentZ = current[i][2];
-        if (currentY > maxY) maxY = currentY;
-        else if (currentY < minY) minY = currentY;
-        if (currentZ > maxZ) maxZ = currentZ;
-        else if (currentZ < minZ) minZ = currentZ;
-    }
-    point_t center =
-    {
-        0,
-        (minY + maxY) * 0.5,
-        (minZ + maxZ) * 0.5
-    };
-    qDebug() << center.x << center.y << center.z;
-    return center;
 }
 
 point_t Item::getCenter()
@@ -259,7 +184,8 @@ bool Item::compareViewModes(bool sceneMode)
 void Item::spinOY(double angle)
 {
     double radAngle = angle * PI / 180.;
-    point_t center = centerXZ();
+    findBorders();
+    point_t center = getCenter();
     const matrix T =
     {
         {1, 0, 0, 0},
@@ -284,6 +210,7 @@ void Item::spinOY(double angle)
     multiplyMatrix(transform, T);
     multiplyMatrix(transform, rotate);
     multiplyMatrix(transform, antiT);
+
 }
 
 void Item::spinOX(double radAngle)
@@ -489,9 +416,6 @@ void Item::loadMtl(const QString path)
 
 void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel)
 {
-    /* Projects points and normals,
-       result stored in v(n)Perspective matrix
-    */
     if (!transform.size())
     {
         // Item just added
@@ -507,10 +431,6 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
         };
         borders.minY += distance;
         borders.maxY += distance;
-        qDebug() << "New Item: ";
-        qDebug() << borders.minX << borders.maxX;
-        qDebug() << borders.minY << borders.maxY;
-        qDebug() << borders.minZ << borders.maxZ;
     }
     else
     {
@@ -524,11 +444,13 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
         }
     }
     // If infinity passed no need to rotate view
-//    if (!qIsInf(viewRadRotation))
-//    {
-//        spinOX(viewRadRotation);
-//        itemView = !itemView;
-//    }
+    /*
+    if (!qIsInf(viewRadRotation))
+    {
+        spinOX(viewRadRotation);
+        itemView = !itemView;
+    }*/
+
     multiplyMatrix(vOriginal, transform, vPerspective);
     double transX = transform[3][0];
     double transY = transform[3][1];
@@ -569,10 +491,10 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
     ldy = height;
     rux = 0;
     ruy = 0;
+    // Camera position, move to camera struct later
+    std::vector<double> camera = {0, 0, 0};
     for (int i = 0; i < polygons.size(); i++)
     {
-        // Camera position, move to camera struct later
-        std::vector<double> camera = {0, 0, 0};
         // Polygon points
         std::vector<double> p1 = vPerspective[polygons[i].points[0]];
         std::vector<double> p2 = vPerspective[polygons[i].points[1]];

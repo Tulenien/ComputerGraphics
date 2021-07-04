@@ -139,7 +139,8 @@ void Scene::rotateSceneOX(double angle)
 
 void Scene::rotateSceneOY(double angle)
 {
-    for (int i = 0; i < items.size(); i++) items[i].rotateOY(angle);
+    for (int i = 0; i < items.size(); i++) items[i].spinOY(angle);
+    renderScene();
 }
 
 const matrix Scene::computeProjectionMatrix()

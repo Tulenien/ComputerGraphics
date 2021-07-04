@@ -61,13 +61,10 @@ class Item
 {
 public:
     Item(QString dir, QString file);
-    // Delete centerXZ, centerYZ,
-    // Replace by getCenter and dynamicly change Borders
+    // Dynamicly change Borders
     // when Item is rotated/ translated
     // Use Z coordinates later to choose closest and farthest
     // point and set Znear, Zfar with it
-    point_t centerXZ();
-    point_t centerYZ();
     point_t getCenter();
     void findBorders();
     bool compareViewModes(bool sceneMode);
