@@ -80,7 +80,7 @@ public:
     // Self-rotate
     void spinOY(double angle);
     void spinOX(double radAngle);
-    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double viewRadRotation);
+    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel);
     void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height);
     bool changeIsClicked();
     void outline(QImage *&image);
@@ -90,7 +90,12 @@ private:
     int ldx, ldy, rux, ruy;
     bool isClicked = false;
     bool itemView = false;
-    volumeBorder borders;
+    volumeBorder borders =
+    {
+        qInf(), qInf(),
+        qInf(), qInf(),
+        qInf(), qInf()
+    };
     matrix vOriginal, nOriginal;
     matrix transform;
     matrix vPerspective, nPerspective;

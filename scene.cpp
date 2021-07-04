@@ -27,7 +27,7 @@ void Scene::setupImage()
 {
     image->fill(QColor(255, 255, 255));
     // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
-    cam = {90, 90, 20, 24, 18, 10, 500};
+    cam = {90, 90, 20, 24, 18, 10, length + 10};
     for (size_t i = 0; i < depthBuffer.size(); i++)
     {
         depthBuffer[i].clear();
@@ -82,6 +82,7 @@ void Scene::setSize(double &width, double &length, double &height)
     this->width = width;
     this->length = length;
     this->height = height;
+    renderScene();
 }
 
 void Scene::changeViewMode()
@@ -109,13 +110,13 @@ void Scene::renderScene()
         double radAngle;
         for (int i = 0; i < items.size(); i++)
         {
-            radAngle = -PI * 0.5;
+            //radAngle = -PI * 0.5;
             if (!(items[i].compareViewModes(viewMode)))
             {
                 if (!viewMode) radAngle *= -1;
             }
             else radAngle = qInf();
-            items[i].rasterise(projection, imageWidth, imageHeight, radAngle);
+            items[i].rasterise(projection, imageWidth, imageHeight, -height * 0.5);
             items[i].render(depthBuffer, image, clickSearch, imageWidth, imageHeight);
         }
     }
@@ -143,6 +144,7 @@ void Scene::rotateSceneOY(double angle)
 
 const matrix Scene::computeProjectionMatrix()
 {
+    // Scale will be used to zoom in and out the image
     double scale = 1;//1 / tanh(cam.fovX * 0.5 * PI / 180);
     double a = 1;//imageWidth / imageHeight;
     double q = cam.far / (cam.far - cam.near);

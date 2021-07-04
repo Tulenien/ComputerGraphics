@@ -214,6 +214,16 @@ point_t Item::getCenter()
 
 void Item::findBorders()
 {
+    if (!transform.size())
+    {
+        transform =
+        {
+            {1, 0, 0, 0},
+            {0, 1, 0, 0},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1},
+        };
+    }
     matrix current;
     multiplyMatrix(vOriginal, transform, current);
     double minX = current[0][0], maxX = current[0][0];
@@ -477,20 +487,41 @@ void Item::loadMtl(const QString path)
     mtlFile.close();
 }
 
-void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double viewRadRotation)
+void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel)
 {
     /* Projects points and normals,
        result stored in v(n)Perspective matrix
     */
     if (!transform.size())
     {
+        // Item just added
+        findBorders();
+        double distance = floorLevel - borders.minY;
+        if (abs(distance) < 1e-5) distance = 0;
         transform =
         {
             {1, 0, 0, 0},
             {0, 1, 0, 0},
             {0, 0, -1, 0},
-            {0, 0, -200, 1}
+            {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 200, 1}
         };
+        borders.minY += distance;
+        borders.maxY += distance;
+        qDebug() << "New Item: ";
+        qDebug() << borders.minX << borders.maxX;
+        qDebug() << borders.minY << borders.maxY;
+        qDebug() << borders.minZ << borders.maxZ;
+    }
+    else
+    {
+        double distance = floorLevel - borders.minY;
+        if (abs(distance) < 1e-5) distance = 0;
+        else
+        {
+            transform[3][1] += distance;
+            borders.maxY += distance;
+            borders.minY += distance;
+        }
     }
     // If infinity passed no need to rotate view
 //    if (!qIsInf(viewRadRotation))
