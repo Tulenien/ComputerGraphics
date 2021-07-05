@@ -67,7 +67,6 @@ public:
     // point and set Znear, Zfar with it
     point_t getCenter();
     void findBorders();
-    bool compareViewModes(bool sceneMode);
 
     void move(double x, double y, double z);
     // Rotate with scene
@@ -76,8 +75,9 @@ public:
     void rotateOZ(double angle);
     // Self-rotate
     void spinOY(double angle);
-    void spinOX(double angle);
-    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel);
+    void spinOX(double angle); // Deleted
+    const matrix topViewMatrix(double radAngle);
+    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel, double radAngle);
     void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height);
     bool changeIsClicked();
     void outline(QImage *&image);
@@ -86,7 +86,6 @@ private:
     // Border left-down and right-up screen coordinates
     int ldx, ldy, rux, ruy;
     bool isClicked = false;
-    bool itemView = false;
     volumeBorder borders =
     {
         qInf(), qInf(),

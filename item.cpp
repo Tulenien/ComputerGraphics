@@ -174,13 +174,6 @@ void Item::findBorders()
     };
 }
 
-bool Item::compareViewModes(bool sceneMode)
-{
-    if (sceneMode == itemView)
-        return true;
-    return false;
-}
-
 void Item::spinOY(double angle)
 {
     double radAngle = angle * PI / 180.;
@@ -210,14 +203,19 @@ void Item::spinOY(double angle)
     multiplyMatrix(transform, T);
     multiplyMatrix(transform, rotate);
     multiplyMatrix(transform, antiT);
-
 }
 
-void Item::spinOX(double angle)
+const matrix Item::topViewMatrix(double radAngle)
 {
-    double radAngle = angle * PI / 180.;
     findBorders();
     point_t center = getCenter();
+    matrix current =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 1, 0},
+        {0, 0, 0, 1}
+    };
     const matrix T =
     {
         {1, 0, 0, 0},
@@ -239,9 +237,10 @@ void Item::spinOX(double angle)
         {0, 0, 1, 0},
         {0, center.y, center.z, 1} // Possibly other sign on z...
     };
-    multiplyMatrix(transform, T);
-    multiplyMatrix(transform, rotate);
-    multiplyMatrix(transform, antiT);
+    multiplyMatrix(current, T);
+    multiplyMatrix(current, rotate);
+    multiplyMatrix(current, antiT);
+    return current;
 }
 
 void Item::loadObj(const QString dir, const QString file)
@@ -416,55 +415,77 @@ void Item::loadMtl(const QString path)
     mtlFile.close();
 }
 
-void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel)
+void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel, double radAngle)
 {
-    if (!transform.size())
+    if (qIsInf(radAngle))
     {
-        // Item just added
-        findBorders();
-        double distance = floorLevel - borders.minY;
-        if (abs(distance) < 1e-5) distance = 0;
-        transform =
+        if (!transform.size())
         {
-            {1, 0, 0, 0},
-            {0, 1, 0, 0},
-            {0, 0, -1, 0},
-//            {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 200, 1}
-            {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 1200, 1}
-        };
-        borders.minY += distance;
-        borders.maxY += distance;
+            // Item just added
+            findBorders();
+            double distance = floorLevel - borders.minY;
+            if (abs(distance) < 1e-5) distance = 0;
+            transform =
+            {
+                {1, 0, 0, 0},
+                {0, 1, 0, 0},
+                {0, 0, -1, 0},
+                {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 200, 1}
+            };
+            borders.minY += distance;
+            borders.maxY += distance;
+        }
+        else
+        {
+            double distance = floorLevel - borders.minY;
+            if (abs(distance) < 1e-5) distance = 0;
+            else
+            {
+                transform[3][1] += distance;
+                borders.maxY += distance;
+                borders.minY += distance;
+            }
+        }
+        multiplyMatrix(vOriginal, transform, vPerspective);
+        double transX = transform[3][0];
+        double transY = transform[3][1];
+        double transZ = transform[3][2];
+        transform[3][0] = 0;
+        transform[3][1] = 0;
+        transform[3][2] = 0;
+        multiplyMatrix(nOriginal, transform, nPerspective);
+        transform[3][0] = transX;
+        transform[3][1] = transY;
+        transform[3][2] = transZ;
     }
-//    else
-//    {
-//        double distance = floorLevel - borders.minY;
-//        if (abs(distance) < 1e-5) distance = 0;
-//        else
-//        {
-//            transform[3][1] += distance;
-//            borders.maxY += distance;
-//            borders.minY += distance;
-//        }
-//    }
-    // If infinity passed no need to rotate view
-    /*
-    if (!qIsInf(viewRadRotation))
+    else
     {
-        spinOX(viewRadRotation);
-        itemView = !itemView;
-    }*/
+        if (!transform.size())
+        {
+            // Item just added
+            findBorders();
+            double distance = floorLevel - borders.minY;
+            if (abs(distance) < 1e-5) distance = 0;
+            transform =
+            {
+                {1, 0, 0, 0},
+                {0, 1, 0, 0},
+                {0, 0, -1, 0},
+                {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 600, 1}
+            };
+            borders.minY += distance;
+            borders.maxY += distance;
+        }
+        const matrix rotateDown = topViewMatrix(radAngle);
+        matrix temp = transform;
+        multiplyMatrix(temp, rotateDown);
 
-    multiplyMatrix(vOriginal, transform, vPerspective);
-    double transX = transform[3][0];
-    double transY = transform[3][1];
-    double transZ = transform[3][2];
-    transform[3][0] = 0;
-    transform[3][1] = 0;
-    transform[3][2] = 0;
-    multiplyMatrix(nOriginal, transform, nPerspective);
-    transform[3][0] = transX;
-    transform[3][1] = transY;
-    transform[3][2] = transZ;
+        multiplyMatrix(vOriginal, temp, vPerspective);
+        temp[3][0] = 0;
+        temp[3][1] = 0;
+        temp[3][2] = 0;
+        multiplyMatrix(nOriginal, temp, nPerspective);
+    }
     multiplyMatrix(vPerspective, projection);
 
     // Convert to raster

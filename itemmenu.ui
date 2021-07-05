@@ -16,15 +16,25 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="4" column="0">
-      <widget class="QPushButton" name="rotateAClockwiseBtn">
+     <item row="0" column="1">
+      <widget class="QPushButton" name="zPosBtn">
        <property name="text">
-        <string>Rotate AntiClockwise</string>
+        <string>+z</string>
        </property>
       </widget>
      </item>
      <item row="1" column="1">
       <widget class="QLineEdit" name="coordinateInput"/>
+     </item>
+     <item row="3" column="2">
+      <widget class="QPushButton" name="rotateClockwise">
+       <property name="text">
+        <string>Rotate Clockwise</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="angleInput"/>
      </item>
      <item row="1" column="0">
       <widget class="QPushButton" name="xNegBtn">
@@ -33,36 +43,12 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
-      <widget class="QPushButton" name="rotateClockwise">
+     <item row="3" column="0">
+      <widget class="QPushButton" name="rotateAClockwiseBtn">
        <property name="text">
-        <string>Rotate Clockwise</string>
+        <string>Rotate AntiClockwise</string>
        </property>
       </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QPushButton" name="zPosBtn">
-       <property name="text">
-        <string>+z</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QPushButton" name="rotateUpBtn">
-       <property name="text">
-        <string>RotateUp</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="xPosBtn">
-       <property name="text">
-        <string>+x</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QLineEdit" name="angleInput"/>
      </item>
      <item row="2" column="1">
       <widget class="QPushButton" name="zNegBtn">
@@ -71,10 +57,10 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
-      <widget class="QPushButton" name="rotateDownBtn">
+     <item row="1" column="2">
+      <widget class="QPushButton" name="xPosBtn">
        <property name="text">
-        <string>RotateDown</string>
+        <string>+x</string>
        </property>
       </widget>
      </item>

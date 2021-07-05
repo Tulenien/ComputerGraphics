@@ -62,6 +62,7 @@ private:
     void computeScreenCoordinates();
     void setupImage();
     const matrix computeProjectionMatrix();
+    const matrix computeOrthographicMatrix();
     void mousePressEvent(QMouseEvent *event);
 };
 

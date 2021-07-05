@@ -107,16 +107,12 @@ void Scene::renderScene()
     {
         //computeScreenCoordinates();
         const matrix projection = computeProjectionMatrix();
-        double radAngle;
+        const matrix orthograpic = computeOrthographicMatrix();
+        double radAngle = -PI * 0.5;
         for (int i = 0; i < items.size(); i++)
         {
-            //radAngle = -PI * 0.5;
-            if (!(items[i].compareViewModes(viewMode)))
-            {
-                if (!viewMode) radAngle *= -1;
-            }
-            else radAngle = qInf();
-            items[i].rasterise(projection, imageWidth, imageHeight, -height * 0.5);
+            if (viewMode) items[i].rasterise(orthograpic, imageWidth, imageHeight, -height * 0.5, radAngle);
+            else items[i].rasterise(projection, imageWidth, imageHeight, -height * 0.5, qInf());
             items[i].render(depthBuffer, image, clickSearch, imageWidth, imageHeight);
         }
     }
@@ -132,12 +128,6 @@ void Scene::computeScreenCoordinates()
     imageLeft = -imageRight;
 }
 
-void Scene::rotateSceneOX(double angle)
-{
-    for (int i = 0; i < items.size(); i++) items[i].spinOX(angle);
-    renderScene();
-}
-
 void Scene::rotateSceneOY(double angle)
 {
     for (int i = 0; i < items.size(); i++) items[i].spinOY(angle);
@@ -147,39 +137,31 @@ void Scene::rotateSceneOY(double angle)
 const matrix Scene::computeProjectionMatrix()
 {
     // Scale will be used to zoom in and out the image
-//    double scale = 1;//1 / tanh(cam.fovX * 0.5 * PI / 180);
-    double a = 1;//imageWidth / imageHeight;
-//    double q = cam.far / (cam.far - cam.near);
-//    const matrix projection =
-//    {
-//        {a * scale, 0, 0, 0},
-//        {0, scale, 0, 0},
-//        {0, 0, -q, -1},
-//        {0, 0, -cam.near * q, 0}
-//    };
-    point_t minWorld, maxWorld;
-    minWorld.x = -width  * 1;
-    minWorld.y = -height * 1;
-    minWorld.z = -length * 1;
-    maxWorld.x =  width  * 1;
-    maxWorld.y =  height * 1;
-    maxWorld.z =  length * 1;
-    double maxX = std::max(abs(minWorld.x), abs(maxWorld.x));
-    double maxY = std::max(abs(minWorld.y), abs(maxWorld.y));
-    double max =  std::max(maxX, maxY);
-    double right  = max * a;
-    double top    = max;
-    double left   = -right;
-    double bottom = -top;
-    double rml = 1 / (right - left);
-    double tmb = 1 / (top - bottom);
+    double scale = 1;   //1 / tanh(cam.fovX * 0.5 * PI / 180);
+    double a = 1;       //imageWidth / imageHeight;
+    double q = cam.far / (cam.far - cam.near);
+    const matrix projection =
+    {
+        {a * scale, 0, 0, 0},
+        {0, scale, 0, 0},
+        {0, 0, -q, -1},
+        {0, 0, -cam.near * q, 0}
+    };
+    return projection;
+}
+
+const matrix Scene::computeOrthographicMatrix()
+{
+    double max =  std::max(width, height);
+    double rml = 1 / max;
+    double tmb = 1 / max;
     double fmn = 1 / (cam.far - cam.near);
     const matrix projection =
     {
-        {2 * rml, 0, 0, 0},
-        {0, 2 * tmb, 0, 0},
+        {rml, 0, 0, 0},
+        {0, tmb, 0, 0},
         {0, 0, -2 * fmn, 0},
-        {-(right + left) * rml, -(top + bottom) * tmb, -(cam.far + cam.near) * fmn, 1}
+        {0, 0, -(cam.far + cam.near) * fmn, 1}
     };
     return projection;
 }
