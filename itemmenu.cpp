@@ -36,6 +36,14 @@ itemMenu::itemMenu(QWidget *parent) :
     {
         scene->rotateSceneOY(ui->angleInput->text().toDouble());
     });
+    connect(ui->rotateUpBtn, &QPushButton::pressed, [this]()
+    {
+       scene->rotateSceneOX(ui->angleInput->text().toDouble());
+    });
+    connect(ui->rotateDownBtn, &QPushButton::pressed, [this]()
+    {
+        scene->rotateSceneOX(-ui->angleInput->text().toDouble());
+    });
 }
 
 itemMenu::~itemMenu()

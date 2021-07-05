@@ -134,7 +134,8 @@ void Scene::computeScreenCoordinates()
 
 void Scene::rotateSceneOX(double angle)
 {
-    for (int i = 0; i < items.size(); i++) items[i].rotateOX(angle);
+    for (int i = 0; i < items.size(); i++) items[i].spinOX(angle);
+    renderScene();
 }
 
 void Scene::rotateSceneOY(double angle)
@@ -146,15 +147,39 @@ void Scene::rotateSceneOY(double angle)
 const matrix Scene::computeProjectionMatrix()
 {
     // Scale will be used to zoom in and out the image
-    double scale = 1;//1 / tanh(cam.fovX * 0.5 * PI / 180);
+//    double scale = 1;//1 / tanh(cam.fovX * 0.5 * PI / 180);
     double a = 1;//imageWidth / imageHeight;
-    double q = cam.far / (cam.far - cam.near);
+//    double q = cam.far / (cam.far - cam.near);
+//    const matrix projection =
+//    {
+//        {a * scale, 0, 0, 0},
+//        {0, scale, 0, 0},
+//        {0, 0, -q, -1},
+//        {0, 0, -cam.near * q, 0}
+//    };
+    point_t minWorld, maxWorld;
+    minWorld.x = -width  * 1;
+    minWorld.y = -height * 1;
+    minWorld.z = -length * 1;
+    maxWorld.x =  width  * 1;
+    maxWorld.y =  height * 1;
+    maxWorld.z =  length * 1;
+    double maxX = std::max(abs(minWorld.x), abs(maxWorld.x));
+    double maxY = std::max(abs(minWorld.y), abs(maxWorld.y));
+    double max =  std::max(maxX, maxY);
+    double right  = max * a;
+    double top    = max;
+    double left   = -right;
+    double bottom = -top;
+    double rml = 1 / (right - left);
+    double tmb = 1 / (top - bottom);
+    double fmn = 1 / (cam.far - cam.near);
     const matrix projection =
     {
-        {a * scale, 0, 0, 0},
-        {0, scale, 0, 0},
-        {0, 0, -q, -1},
-        {0, 0, -cam.near * q, 0}
+        {2 * rml, 0, 0, 0},
+        {0, 2 * tmb, 0, 0},
+        {0, 0, -2 * fmn, 0},
+        {-(right + left) * rml, -(top + bottom) * tmb, -(cam.far + cam.near) * fmn, 1}
     };
     return projection;
 }

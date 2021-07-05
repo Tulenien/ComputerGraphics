@@ -76,7 +76,7 @@ public:
     void rotateOZ(double angle);
     // Self-rotate
     void spinOY(double angle);
-    void spinOX(double radAngle);
+    void spinOX(double angle);
     void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel);
     void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height);
     bool changeIsClicked();

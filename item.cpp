@@ -213,9 +213,11 @@ void Item::spinOY(double angle)
 
 }
 
-void Item::spinOX(double radAngle)
+void Item::spinOX(double angle)
 {
-    point_t center = centerYZ();
+    double radAngle = angle * PI / 180.;
+    findBorders();
+    point_t center = getCenter();
     const matrix T =
     {
         {1, 0, 0, 0},
@@ -427,22 +429,23 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
             {1, 0, 0, 0},
             {0, 1, 0, 0},
             {0, 0, -1, 0},
-            {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 200, 1}
+//            {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 200, 1}
+            {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 1200, 1}
         };
         borders.minY += distance;
         borders.maxY += distance;
     }
-    else
-    {
-        double distance = floorLevel - borders.minY;
-        if (abs(distance) < 1e-5) distance = 0;
-        else
-        {
-            transform[3][1] += distance;
-            borders.maxY += distance;
-            borders.minY += distance;
-        }
-    }
+//    else
+//    {
+//        double distance = floorLevel - borders.minY;
+//        if (abs(distance) < 1e-5) distance = 0;
+//        else
+//        {
+//            transform[3][1] += distance;
+//            borders.maxY += distance;
+//            borders.minY += distance;
+//        }
+//    }
     // If infinity passed no need to rotate view
     /*
     if (!qIsInf(viewRadRotation))
