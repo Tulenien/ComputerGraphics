@@ -137,6 +137,12 @@ point_t Item::getCenter()
     return center;
 }
 
+volumeBorder &Item::getBorders()
+{
+    findBorders();
+    return borders;
+}
+
 void Item::findBorders()
 {
     if (!transform.size())
@@ -145,7 +151,7 @@ void Item::findBorders()
         {
             {1, 0, 0, 0},
             {0, 1, 0, 0},
-            {0, 0, 1, 0},
+            {0, 0, -1, 0},
             {0, 0, 0, 1},
         };
     }
@@ -154,24 +160,27 @@ void Item::findBorders()
     double minX = current[0][0], maxX = current[0][0];
     double minY = current[0][1], maxY = current[0][1];
     double minZ = current[0][2], maxZ = current[0][2];
-    for (std::size_t i = 1; i < current.size(); i++)
+    if (current.size() > 1)
     {
-        double currentX = current[i][0];
-        double currentY = current[i][1];
-        double currentZ = current[i][2];
-        if (currentX > maxX) maxX = currentX;
-        else if (currentX < minX) minX = currentX;
-        if (currentY > maxY) maxY = currentY;
-        else if (currentY < minY) minY = currentY;
-        if (currentZ > maxZ) maxZ = currentZ;
-        else if (currentZ < minZ) minZ = currentZ;
+        for (std::size_t i = 1; i < current.size(); i++)
+        {
+            double currentX = current[i][0];
+            double currentY = current[i][1];
+            double currentZ = current[i][2];
+            if (currentX > maxX) maxX = currentX;
+            else if (currentX < minX) minX = currentX;
+            if (currentY > maxY) maxY = currentY;
+            else if (currentY < minY) minY = currentY;
+            if (currentZ > maxZ) maxZ = currentZ;
+            else if (currentZ < minZ) minZ = currentZ;
+        }
+        borders =
+        {
+            minX, maxX,
+            minY, maxY,
+            minZ, maxZ,
+        };
     }
-    borders =
-    {
-        minX, maxX,
-        minY, maxY,
-        minZ, maxZ,
-    };
 }
 
 void Item::spinOY(double angle)
@@ -415,80 +424,63 @@ void Item::loadMtl(const QString path)
     mtlFile.close();
 }
 
-void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel, double radAngle)
+void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double radAngle)
 {
-    if (qIsInf(radAngle))
-    {
-        if (!transform.size())
-        {
-            // Item just added
-            findBorders();
-            double distance = floorLevel - borders.minY;
-            if (abs(distance) < 1e-5) distance = 0;
-            transform =
-            {
-                {1, 0, 0, 0},
-                {0, 1, 0, 0},
-                {0, 0, -1, 0},
-                {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 200, 1}
-            };
-            borders.minY += distance;
-            borders.maxY += distance;
-        }
-        else
-        {
-            double distance = floorLevel - borders.minY;
-            if (abs(distance) < 1e-5) distance = 0;
-            else
-            {
-                transform[3][1] += distance;
-                borders.maxY += distance;
-                borders.minY += distance;
-            }
-        }
-        multiplyMatrix(vOriginal, transform, vPerspective);
-        double transX = transform[3][0];
-        double transY = transform[3][1];
-        double transZ = transform[3][2];
-        transform[3][0] = 0;
-        transform[3][1] = 0;
-        transform[3][2] = 0;
-        multiplyMatrix(nOriginal, transform, nPerspective);
-        transform[3][0] = transX;
-        transform[3][1] = transY;
-        transform[3][2] = transZ;
-    }
+/*
+    double distance = floorLevel - borders.minY;
+    if (abs(distance) < 1e-5) distance = 0;
     else
     {
-        if (!transform.size())
-        {
-            // Item just added
-            findBorders();
-            double distance = floorLevel - borders.minY;
-            if (abs(distance) < 1e-5) distance = 0;
-            transform =
-            {
-                {1, 0, 0, 0},
-                {0, 1, 0, 0},
-                {0, 0, -1, 0},
-                {-(borders.maxX + borders.minX) * 0.5, distance, (borders.maxZ + borders.minZ) * 0.5 - 600, 1}
-            };
-            borders.minY += distance;
-            borders.maxY += distance;
-        }
-        const matrix rotateDown = topViewMatrix(radAngle);
-        matrix temp = transform;
-        multiplyMatrix(temp, rotateDown);
-
-        multiplyMatrix(vOriginal, temp, vPerspective);
-        temp[3][0] = 0;
-        temp[3][1] = 0;
-        temp[3][2] = 0;
-        multiplyMatrix(nOriginal, temp, nPerspective);
+        transform[3][1] += distance;
+        borders.maxY += distance;
+        borders.minY += distance;
     }
+    transform =
+    {
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, -1, 0},
+        {0, 0, distance, 1}
+    };
+
+    const matrix rotateDown = topViewMatrix(radAngle);
+    matrix temp = transform;
+    multiplyMatrix(temp, rotateDown);
+    multiplyMatrix(vOriginal, temp, vPerspective);
+    temp[3][0] = 0;
+    temp[3][1] = 0;
+    temp[3][2] = 0;
+    multiplyMatrix(nOriginal, temp, nPerspective);
+
+
+    multiplyMatrix(vOriginal, transform, vPerspective);
+    double transX = transform[3][0];
+    double transY = transform[3][1];
+    double transZ = transform[3][2];
+    transform[3][0] = 0;
+    transform[3][1] = 0;
+    transform[3][2] = 0;
+    multiplyMatrix(nOriginal, transform, nPerspective);
+    transform[3][0] = transX;
+    transform[3][1] = transY;
+    transform[3][2] = transZ;
+    multiplyMatrix(vPerspective, projection);
+*/
+
+    multiplyMatrix(vOriginal, transform, vPerspective);
+    double transX = transform[3][0];
+    double transY = transform[3][1];
+    double transZ = transform[3][2];
+    transform[3][0] = 0;
+    transform[3][1] = 0;
+    transform[3][2] = 0;
+    multiplyMatrix(nOriginal, transform, nPerspective);
+    transform[3][0] = transX;
+    transform[3][1] = transY;
+    transform[3][2] = transZ;
     multiplyMatrix(vPerspective, projection);
 
-    // Convert to raster
+    // Convert to raster DO NOT TOUCH!
     for (size_t i = 0; i < vPerspective.size(); i++)
     {
         if (!qIsNull(vPerspective[i][3]))
@@ -502,14 +494,14 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
         vPerspective[i][0]++;
         vPerspective[i][1] *= -1;
         vPerspective[i][1]++;
-        //const int ratio = std::min(imageWidth, imageHeight);
+//        const int ratio = std::min(imageWidth, imageHeight);
         vPerspective[i][0] *= 0.5 * imageWidth;
         vPerspective[i][1] *= 0.5 * imageHeight;
         vPerspective[i][2] *= -1;
     }
 }
 
-void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height)
+void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, const int &width, const int &height)
 {
     ldx = width;
     ldy = height;

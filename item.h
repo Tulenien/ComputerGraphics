@@ -66,7 +66,9 @@ public:
     // Use Z coordinates later to choose closest and farthest
     // point and set Znear, Zfar with it
     point_t getCenter();
-    void findBorders();
+    volumeBorder &getBorders();
+    bool ageCheck(){return isNew;}
+    void ageChange(){isNew = false;}
 
     void move(double x, double y, double z);
     // Rotate with scene
@@ -77,14 +79,15 @@ public:
     void spinOY(double angle);
     void spinOX(double angle); // Deleted
     const matrix topViewMatrix(double radAngle);
-    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double floorLevel, double radAngle);
-    void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, int width, int height);
+    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double radAngle);
+    void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, const int &width, const int &height);
     bool changeIsClicked();
     void outline(QImage *&image);
 
 private:
     // Border left-down and right-up screen coordinates
     int ldx, ldy, rux, ruy;
+    bool isNew = true;
     bool isClicked = false;
     volumeBorder borders =
     {
@@ -97,6 +100,7 @@ private:
     matrix vPerspective, nPerspective;
     matrix textures;
 
+    void findBorders();
     bool multiplyMatrix(matrix &A, const matrix &B);
     bool multiplyMatrix(const matrix &A, const matrix &B, matrix &C);
     void loadObj(const QString dir, const QString file);

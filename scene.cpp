@@ -105,14 +105,51 @@ void Scene::renderScene()
     setupImage();
     if (!items.isEmpty())
     {
-        //computeScreenCoordinates();
-        const matrix projection = computeProjectionMatrix();
-        const matrix orthograpic = computeOrthographicMatrix();
         double radAngle = -PI * 0.5;
+        // Find all borders, move new items to (0, floor, 0)
+        // Calculate minZ and maxZ
+        // Move all items back by 2 * (maxZ - minZ)
+        // Set cam.near to minZ, cam.far to minZ - 3 * (maxZ - minZ)
+        // Calculate projection and orthographic matrix
+        double temp;
+        double minZ = qInf(), maxZ = - qInf();
         for (int i = 0; i < items.size(); i++)
         {
-            if (viewMode) items[i].rasterise(orthograpic, imageWidth, imageHeight, -height * 0.5, radAngle);
-            else items[i].rasterise(projection, imageWidth, imageHeight, -height * 0.5, qInf());
+            volumeBorder &borders = items[i].getBorders();
+            // Calculate distance to floor
+            double yOffset = -height * 0.5 - borders.minY;
+            if (abs(yOffset) < 1e-5) yOffset = 0;
+            if (items[i].ageCheck())
+            {
+                items[i].move(-(borders.maxX + borders.minX) * 0.5, yOffset,
+                              -(borders.maxZ + borders.minZ) * 0.5);
+                temp = borders.minX;
+                borders.minX = (borders.minX - borders.maxX) * 0.5;
+                borders.maxX = (borders.maxX - temp) * 0.5;
+                borders.minY = borders.minY + yOffset;
+                borders.maxY = borders.maxY + yOffset;
+                temp = borders.minZ;
+                borders.minZ = (borders.minZ - borders.maxZ) * 0.5;
+                borders.maxZ = (borders.maxZ - temp) * 0.5;
+                if (borders.minZ < minZ) minZ = borders.minZ;
+                if (borders.maxZ > maxZ) maxZ = borders.maxZ;
+            }
+        }
+        double distance = maxZ - minZ;
+        cam.near = -minZ;
+        cam.far  = -minZ + 3 * distance;
+        const matrix projection = computeProjectionMatrix();
+        const matrix orthograpic = computeOrthographicMatrix();
+        for (int i = 0; i < items.size(); i++)
+        {
+            if (items[i].ageCheck())
+            {
+                items[i].move(0, 0, -2 * distance);
+                items[i].ageChange();
+            }
+//            if (viewMode) items[i].rasterise(orthograpic, imageWidth, imageHeight, -height * 0.5, radAngle);
+//            else items[i].rasterise(projection, imageWidth, imageHeight, -height * 0.5, qInf());
+            items[i].rasterise(projection, imageWidth, imageHeight, qInf());
             items[i].render(depthBuffer, image, clickSearch, imageWidth, imageHeight);
         }
     }

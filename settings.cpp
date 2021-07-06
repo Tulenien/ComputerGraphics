@@ -61,13 +61,10 @@ void Settings::addItems()
         QTreeWidgetItem *item = ui->itemCatalogWdt->topLevelItem(i);
         for (int j = 0; j < item->childCount(); j++)
         {
-            //qDebug() << item->child(j)->checkState(0);
             // Find all checked items and add them to the Qlist
             // Only use child attribute when traversing the QTreeItem * or Segment fault
             if (item->child(j)->checkState(0) == Qt::Checked)
             {
-                // Check if Item is added before
-                //ui->ItemListWdt->findItems(item[i].text(0), Qt::MatchExactly).size()
                 QListWidgetItem *listItem = new QListWidgetItem;
                 QString itemName = item->child(j)->text(0);
                 listItem->setText(itemName);
