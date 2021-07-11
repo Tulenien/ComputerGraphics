@@ -24,12 +24,11 @@ public:
 
 private:
     Ui::Settings *ui;
-    const QString *catalogPath;
+    const QString catalogPath;
     void loadItemCatalog(const QString &);
 
 private slots:
     void addItems();
-    void showScene();
     void deleteItem();
     void deleteAllItems();
     void changeViewMode();

@@ -1,10 +1,8 @@
 ﻿#include "scene.h"
 
 Scene::Scene(QWidget *parent)
+    : width(200), length(200), height(250)
 {
-    width = 200;
-    length = 200;
-    height = 250;
     this->setMinimumSize(640, 480);
     QSize size = this->size();
     imageWidth = size.width();
@@ -26,8 +24,8 @@ void Scene::resizeEvent(QResizeEvent *event)
 void Scene::setupImage()
 {
     image->fill(QColor(255, 255, 255));
-    // Camera setup: fovX, fovY, focalLength, apertureWidth, apertureHeight, near, far
-    cam = {90, 90, 20, 24, 18, 10, length + 10};
+    // Camera setup: fov, near, far
+    cam = {90, 10, length + 10};
     for (size_t i = 0; i < depthBuffer.size(); i++)
     {
         depthBuffer[i].clear();
@@ -62,37 +60,12 @@ void Scene::deleteItems()
     renderScene();
 }
 
-double Scene::getWidth()
-{
-    return width;
-}
-
-double Scene::getLength()
-{
-    return length;
-}
-
-double Scene::getHeight()
-{
-    return height;
-}
-
-void Scene::setSize(double &width, double &length, double &height)
+void Scene::setSize(const double &width, const double &length, const double &height)
 {
     this->width = width;
     this->length = length;
     this->height = height;
     renderScene();
-}
-
-void Scene::changeViewMode()
-{
-    viewMode = !viewMode;
-}
-
-bool Scene::getViewMode()
-{
-    return viewMode;
 }
 
 Item &Scene::getItemByIndex(int index)
@@ -106,18 +79,13 @@ void Scene::renderScene()
     if (!items.isEmpty())
     {
         double radAngle = -PI * 0.5;
-        // Find all borders, move new items to (0, floor, 0)
-        // Calculate minZ and maxZ
-        // Move all items back by 2 * (maxZ - minZ)
-        // Set cam.near to minZ, cam.far to minZ - 3 * (maxZ - minZ)
-        // Calculate projection and orthographic matrix
         double temp;
         double minZ = qInf(), maxZ = - qInf();
+        double yOffset = 0;
         for (int i = 0; i < items.size(); i++)
         {
             volumeBorder &borders = items[i].getBorders();
-            // Calculate distance to floor
-            double yOffset = -height * 0.5 - borders.minY;
+            yOffset = -height * 0.5 - borders.minY;
             if (abs(yOffset) < 1e-5) yOffset = 0;
             if (items[i].ageCheck())
             {
@@ -135,9 +103,13 @@ void Scene::renderScene()
                 if (borders.maxZ > maxZ) maxZ = borders.maxZ;
             }
         }
-        double distance = maxZ - minZ;
-        cam.near = -minZ;
-        cam.far  = -minZ + 3 * distance;
+        double distance = 0;
+        if (!qIsInf(minZ))
+        {
+            distance = maxZ - minZ;
+            cam.near = -minZ;
+            cam.far  = -minZ + 3 * distance;
+        }
         const matrix projection = computeProjectionMatrix();
         const matrix orthograpic = computeOrthographicMatrix();
         for (int i = 0; i < items.size(); i++)
@@ -150,7 +122,7 @@ void Scene::renderScene()
 //            if (viewMode) items[i].rasterise(orthograpic, imageWidth, imageHeight, -height * 0.5, radAngle);
 //            else items[i].rasterise(projection, imageWidth, imageHeight, -height * 0.5, qInf());
             items[i].rasterise(projection, imageWidth, imageHeight, qInf());
-            items[i].render(depthBuffer, image, clickSearch, imageWidth, imageHeight);
+            items[i].render(depthBuffer, *image, clickSearch, imageWidth, imageHeight);
         }
     }
     setPixmap(QPixmap::fromImage(*image));
@@ -173,7 +145,6 @@ void Scene::rotateSceneOY(double angle)
 
 const matrix Scene::computeProjectionMatrix()
 {
-    // Scale will be used to zoom in and out the image
     double scale = 1;   //1 / tanh(cam.fovX * 0.5 * PI / 180);
     double a = 1;       //imageWidth / imageHeight;
     double q = cam.far / (cam.far - cam.near);
@@ -211,7 +182,7 @@ void Scene::mousePressEvent(QMouseEvent *event)
         bool status = clickSearch[key]->changeIsClicked();
         if (status)
         {
-            clickSearch[key]->outline(image);
+            clickSearch[key]->outline(*image);
             setPixmap(QPixmap::fromImage(*image));
             this->show();
         }

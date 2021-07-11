@@ -23,6 +23,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    Settings *windowSettings = nullptr;
+    Settings *windowSettings;
 };
 #endif // MAINWINDOW_H

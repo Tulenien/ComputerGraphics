@@ -4,25 +4,23 @@
 #include <QWidget>
 #include "scene.h"
 
-namespace Ui {
-class itemMenu;
-}
+namespace Ui { class itemMenu; }
 
 class itemMenu : public QWidget
 {
     Q_OBJECT
-
 public:
-    explicit itemMenu(QWidget *parent = nullptr);
+    itemMenu(QWidget *parent = nullptr);
     ~itemMenu();
     void setCurrentIndex(int index);
-    int getCurrentIndex();
-    void setScene(Scene *&scene);
+    int getCurrentIndex() const { return currentIndex; }
+    void setScene(Scene &scene);
 
 private:
     Ui::itemMenu *ui;
     int currentIndex;
     Scene *scene;
 };
+
 
 #endif // ITEMMENU_H

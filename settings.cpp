@@ -3,12 +3,12 @@
 
 Settings::Settings(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::Settings)
+    ui(new Ui::Settings),
+    catalogPath("C:/Users/timof/Documents/Programming/ComputerGraphics/QtProjects/InteriorBuilder/models")
 {
     ui->setupUi(this);
     // Load all available interior items to itemCatalog
-    catalogPath = new QString("C:/Users/timof/Documents/Programming/ComputerGraphics/QtProjects/InteriorBuilder/models");
-    loadItemCatalog(*catalogPath);
+    loadItemCatalog(catalogPath);
     // Set validators to prevent bad values
     QDoubleValidator verticalValidator(1, 501, 6);
     QDoubleValidator horizontalValidator(1, 10001, 6);
@@ -31,11 +31,10 @@ Settings::~Settings()
 
 void Settings::loadItemCatalog(const QString &catalogPath)
 {
-    QDir path(catalogPath);
+    const QDir path(catalogPath);
     QDir filepath("");
     QStringList items;
-    //qDebug() << path.entryList(QDir::NoDotAndDotDot | QDir::AllDirs) << path.absolutePath();
-    QStringList folders = path.entryList(QDir::NoDotAndDotDot | QDir::AllDirs);
+    const QStringList folders = path.entryList(QDir::NoDotAndDotDot | QDir::AllDirs);
     for (int i = 0; i < folders.count(); i++)
     {
         QTreeWidgetItem *root = new QTreeWidgetItem(ui->itemCatalogWdt);
@@ -70,7 +69,7 @@ void Settings::addItems()
                 listItem->setText(itemName);
                 ui->ItemListWdt->insertItem(0, listItem);
                 item->child(j)->setCheckState(0, Qt::Unchecked);
-                scene->addItem(*catalogPath + "/" + item->text(0), itemName);
+                scene->addItem(catalogPath + "/" + item->text(0), itemName);
                 count++;
             }
         }
@@ -138,17 +137,12 @@ void Settings::openItemMenu(QListWidgetItem *item)
     if (!imenu)
     {
         imenu = new itemMenu();
-        imenu->setScene(this->scene);
+        imenu->setScene(*scene);
     }
     // Set index of item in Scene's QList of Items
     imenu->setCurrentIndex(ui->ItemListWdt->row(item));
     imenu->setWindowTitle(item->text());
     imenu->show();
-}
-
-void Settings::showScene()
-{
-    scene->renderScene();
 }
 
 void Settings::changeViewMode()

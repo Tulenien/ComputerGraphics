@@ -1,6 +1,6 @@
 ﻿#include "item.h"
 
-Item::Item(QString dir, QString file)
+Item::Item(const QString &dir, const QString &file)
 {
     // Load mtl file inside
     isClicked = false;
@@ -252,7 +252,7 @@ const matrix Item::topViewMatrix(double radAngle)
     return current;
 }
 
-void Item::loadObj(const QString dir, const QString file)
+void Item::loadObj(const QString &dir, const QString &file)
 {
     QString path = dir + "/" + file + ".obj";
     QFile objFile(path);
@@ -348,7 +348,7 @@ void Item::loadObj(const QString dir, const QString file)
     objFile.close();
 }
 
-void Item::loadMtl(const QString path)
+void Item::loadMtl(const QString &path)
 {
     QFile mtlFile(path);
     QTextStream pipeline(&mtlFile);
@@ -501,7 +501,7 @@ void Item::rasterise(const matrix &projection, const int &imageWidth, const int 
     }
 }
 
-void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, const int &width, const int &height)
+void Item::render(matrix &buffer, QImage &image, QMap<QString, Item *> &clickSearch, const int &width, const int &height)
 {
     ldx = width;
     ldy = height;
@@ -512,9 +512,9 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
     for (int i = 0; i < polygons.size(); i++)
     {
         // Polygon points
-        std::vector<double> p1 = vPerspective[polygons[i].points[0]];
-        std::vector<double> p2 = vPerspective[polygons[i].points[1]];
-        std::vector<double> p3 = vPerspective[polygons[i].points[2]];
+        const std::vector<double> p1 = vPerspective[polygons[i].points[0]];
+        const std::vector<double> p2 = vPerspective[polygons[i].points[1]];
+        const std::vector<double> p3 = vPerspective[polygons[i].points[2]];
         /* Polygon normal:
          * Cross product of two vectors on the plane
          * p1->p2 and p1->p3
@@ -540,17 +540,17 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
             n[2] * (p1[2] - camera[2]) < 0.)
         {
             // Find bounding box
-            double xmin = std::min(p1[0], std::min(p2[0], p3[0]));
-            double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
-            double xmax = std::max(p1[0], std::max(p2[0], p3[0]));
-            double ymax = std::max(p1[1], std::max(p2[1], p3[1]));
+            const double xmin = std::min(p1[0], std::min(p2[0], p3[0]));
+            const double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
+            const double xmax = std::max(p1[0], std::max(p2[0], p3[0]));
+            const double ymax = std::max(p1[1], std::max(p2[1], p3[1]));
             if (!(xmin > width - 1 || xmax < 0 || ymin > height - 1 || ymax < 0))
             {
                 // Starting points of interpolation
-                int x0 = std::max(0, int(xmin));
-                int x1 = std::min(width - 1, int(xmax));
-                int y0 = std::max(0, int(ymin));
-                int y1 = std::min(height - 1, int(ymax));
+                const int x0 = std::max(0, int(xmin));
+                const int x1 = std::min(width - 1, int(xmax));
+                const int y0 = std::max(0, int(ymin));
+                const int y1 = std::min(height - 1, int(ymax));
 
                 // Border coords
                 if (x0 < ldx) ldx = x0;
@@ -560,9 +560,9 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
 
                 double area = edgeCheck(p1, p2, p3);
 
-                std::vector<double> n1 = nPerspective[polygons[i].normals[0]];
-                std::vector<double> n2 = nPerspective[polygons[i].normals[1]];
-                std::vector<double> n3 = nPerspective[polygons[i].normals[2]];
+                const std::vector<double> n1 = nPerspective[polygons[i].normals[0]];
+                const std::vector<double> n2 = nPerspective[polygons[i].normals[1]];
+                const std::vector<double> n3 = nPerspective[polygons[i].normals[2]];
                 for (int y = y0; y <= y1; y++)
                 {
                     for (int x = x0; x <= x1; x++)
@@ -582,7 +582,6 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
                             if (z < buffer[x][y])
                             {
                                 buffer[x][y] = z;
-                                //double cosn = w1 * (n1[0] + n1[1] + n1[2]) + w2 * (n2[0] + n2[1] + n2[2]) + w3 * (n3[0] + n3[1] + n3[2]);
                                 double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
                                 QColor ambientColor = materialMap[polygons[i].materialKey].ka;
                                 QColor diffuseColor = materialMap[polygons[i].materialKey].kd;
@@ -591,8 +590,8 @@ void Item::render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSe
                                 ambientColor.getRgbF(&ar, &ag, &ab);
                                 diffuseColor.getRgbF(&dr, &dg, &db);
                                 ambientColor.setRgbF((ar + dr * cosn) / 2, (ag + dg * cosn) / 2, (ab + db * cosn) / 2);
-                                image->setPixelColor(x, y, ambientColor);
-                                QString key = QString::number(x) + "." + QString::number(y);
+                                image.setPixelColor(x, y, ambientColor);
+                                const QString key = QString::number(x) + "." + QString::number(y);
                                 clickSearch[key] = this;
                                 /* Debug polygons
                                     QColor fillColor;
@@ -628,7 +627,7 @@ bool Item::changeIsClicked()
     return isClicked;
 }
 
-void Item::outline(QImage *&image)
+void Item::outline(QImage &image)
 {
     // Connect bounding box
     QColor line_color(0, 0, 0);
@@ -646,13 +645,13 @@ void Item::outline(QImage *&image)
         int signY = y0 < y1 ? 1 : -1;
         int error = dx - dy;
         int double_error = 0;
-        image->setPixel(x1, y1, line_color.rgba());
+        image.setPixel(x1, y1, line_color.rgba());
         while(x0 != x1 || y0 != y1)
         {
-            QColor contrastColor(image->pixel(x0, y0));
+            QColor contrastColor(image.pixel(x0, y0));
             contrastColor.getRgb(&r, &g, &b);
             contrastColor.setRgb(127 - r, 127 - g, 127 - b);
-            image->setPixel(x0, y0, contrastColor.rgba());
+            image.setPixel(x0, y0, contrastColor.rgba());
             double_error = error << 1;
             if (double_error > -dy)
             {

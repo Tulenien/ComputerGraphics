@@ -6,7 +6,6 @@ itemMenu::itemMenu(QWidget *parent) :
     ui(new Ui::itemMenu)
 {
     ui->setupUi(this);
-    // Use modern style lambdas
     connect(ui->xNegBtn, &QPushButton::pressed, [this]()
     {
         scene->getItemByIndex(currentIndex).move(-(ui->coordinateInput->text().toDouble()), 0, 0);
@@ -48,12 +47,7 @@ void itemMenu::setCurrentIndex(int index)
     currentIndex = index;
 }
 
-int itemMenu::getCurrentIndex()
+void itemMenu::setScene(Scene &scene)
 {
-    return currentIndex;
-}
-
-void itemMenu::setScene(Scene *&scene)
-{
-    this->scene = scene;
+    this->scene = &scene;
 }

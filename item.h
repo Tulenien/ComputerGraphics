@@ -60,15 +60,11 @@ struct XY { int x, y; };
 class Item
 {
 public:
-    Item(QString dir, QString file);
-    // Dynamicly change Borders
-    // when Item is rotated/ translated
-    // Use Z coordinates later to choose closest and farthest
-    // point and set Znear, Zfar with it
+    Item(const QString &dir, const QString &file);
     point_t getCenter();
     volumeBorder &getBorders();
-    bool ageCheck(){return isNew;}
-    void ageChange(){isNew = false;}
+    bool ageCheck(){ return isNew; }
+    void ageChange(){ isNew = false; }
 
     void move(double x, double y, double z);
     // Rotate with scene
@@ -80,9 +76,9 @@ public:
     void spinOX(double angle); // Deleted
     const matrix topViewMatrix(double radAngle);
     void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double radAngle);
-    void render(matrix &buffer, QImage *&image, QMap<QString, Item *> &clickSearch, const int &width, const int &height);
+    void render(matrix &buffer, QImage &image, QMap<QString, Item *> &clickSearch, const int &width, const int &height);
     bool changeIsClicked();
-    void outline(QImage *&image);
+    void outline(QImage &image);
 
 private:
     // Border left-down and right-up screen coordinates
@@ -103,8 +99,8 @@ private:
     void findBorders();
     bool multiplyMatrix(matrix &A, const matrix &B);
     bool multiplyMatrix(const matrix &A, const matrix &B, matrix &C);
-    void loadObj(const QString dir, const QString file);
-    void loadMtl(const QString path);
+    void loadObj(const QString &dir, const QString &file);
+    void loadMtl(const QString &path);
     QMap<QString, material> materialMap;
     QList<polygon> polygons;
 
