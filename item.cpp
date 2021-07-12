@@ -1,21 +1,23 @@
 ﻿#include "item.h"
 
-Item::Item(const QString &dir, const QString &file)
+Item::Item(const QString &t_dir, const QString &t_file)
+    :  m_isNew(true), m_isClicked(false),
+       m_borders(qInf(), qInf(), qInf(), qInf(), qInf(), qInf())
 {
     // Load mtl file inside
-    isClicked = false;
-    loadObj(dir, file);
+    m_isClicked = false;
+    loadObj(t_dir, t_file);
 }
 
-bool Item::multiplyMatrix(matrix &A, const matrix &B)
+bool Item::multiplyMatrix(matrix &t_A, const matrix &t_B)
 {
     // Rewrites result in matrix A
     bool status = true;
     // Standart multiplication algorithm
-    std::size_t rows = A.size();
-    std::size_t cols = B[0].size();
-    std::size_t nest = B.size();
-    if (A[0].size() != nest) status = false;
+    std::size_t rows = t_A.size();
+    std::size_t cols = t_B[0].size();
+    std::size_t nest = t_B.size();
+    if (t_A[0].size() != nest) status = false;
     else
     {
         matrix temp;
@@ -26,37 +28,37 @@ bool Item::multiplyMatrix(matrix &A, const matrix &B)
             {
                 for (std::size_t k = 0; k < nest; k++)
                 {
-                    row[j] += A[i][k] * B[k][j];
+                    row[j] += t_A[i][k] * t_B[k][j];
                 }
             }
             temp.push_back(row);
         }
-        A.clear();
+        t_A.clear();
         for (std::size_t i = 0; i < rows; i++)
         {
-            A.push_back(temp[i]);
+            t_A.push_back(temp[i]);
         }
     }
     return status;
 }
 
-bool Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
+bool Item::multiplyMatrix(const matrix &t_A, const matrix &t_B, matrix &t_C)
 {
     // Writes result in matrix C
     bool status = true;
     // Standart multiplication algorithm
-    std::size_t rows = A.size();
-    std::size_t cols = B[0].size();
-    std::size_t nest = B.size();
-    if (C.size())
+    std::size_t rows = t_A.size();
+    std::size_t cols = t_B[0].size();
+    std::size_t nest = t_B.size();
+    if (t_C.size())
     {
-        for (size_t i = 0; i < C.size(); i++)
+        for (size_t i = 0; i < t_C.size(); i++)
         {
-            C[i].clear();
+            t_C[i].clear();
         }
-        C.clear();
+        t_C.clear();
     }
-    if (A[0].size() != nest) status = false;
+    if (t_A[0].size() != nest) status = false;
     else
     {
         for (std::size_t i = 0; i < rows; i++)
@@ -66,18 +68,18 @@ bool Item::multiplyMatrix(const matrix &A, const matrix &B, matrix &C)
             {
                 for (std::size_t k = 0; k < nest; k++)
                 {
-                    row[j] += A[i][k] * B[k][j];
+                    row[j] += t_A[i][k] * t_B[k][j];
                 }
             }
-            C.push_back(row);
+            t_C.push_back(row);
         }
     }
     return status;
 }
 
-void Item::rotateOX(double angleOX)
+void Item::rotateOX(double t_angle)
 {
-    double radAngle = angleOX * PI / 180.;
+    double radAngle = t_angle * PI / 180.;
     const matrix rotate =
     {
         {1, 0, 0, 0},
@@ -85,12 +87,12 @@ void Item::rotateOX(double angleOX)
         {0, -sin(radAngle), cos(radAngle), 0},
         {0, 0, 0, 1}
     };
-    multiplyMatrix(transform, rotate);
+    multiplyMatrix(m_transform, rotate);
 }
 
-void Item::rotateOY(double angle)
+void Item::rotateOY(double t_angle)
 {
-    double radAngle = angle * PI / 180.;
+    double radAngle = t_angle * PI / 180.;
     const matrix rotate =
     {
         {cos(radAngle), 0, sin(radAngle), 0},
@@ -98,12 +100,12 @@ void Item::rotateOY(double angle)
         {-sin(radAngle), 0, cos(radAngle), 0},
         {0, 0, 0, 1}
     };
-    multiplyMatrix(transform, rotate);
+    multiplyMatrix(m_transform, rotate);
 }
 
-void Item::rotateOZ(double angle)
+void Item::rotateOZ(double t_angle)
 {
-    double radAngle = angle * PI / 180.;
+    double radAngle = t_angle * PI / 180.;
     const matrix rotate =
     {
         {cos(radAngle), sin(radAngle), 0, 0},
@@ -111,43 +113,43 @@ void Item::rotateOZ(double angle)
         {0, 0, 1, 0},
         {0, 0, 0, 1}
     };
-    multiplyMatrix(transform, rotate);
+    multiplyMatrix(m_transform, rotate);
 }
 
-void Item::move(double x, double y, double z)
+void Item::move(double t_x, double t_y, double t_z)
 {
     matrix move =
     {
         {1, 0, 0, 0},
         {0, 1, 0, 0},
         {0, 0, 1, 0},
-        {x, y, z, 1}
+        {t_x, t_y, t_z, 1}
     };
-    multiplyMatrix(transform, move);
+    multiplyMatrix(m_transform, move);
 }
 
-point_t Item::getCenter()
+Point<double> Item::getCenter()
 {
-    point_t center =
+    Point<double> center =
     {
-        (borders.minX + borders.maxX) * 0.5,
-        (borders.minY + borders.maxY) * 0.5,
-        (borders.minZ + borders.maxZ) * 0.5,
+        (m_borders.minX + m_borders.maxX) * 0.5,
+        (m_borders.minY + m_borders.maxY) * 0.5,
+        (m_borders.minZ + m_borders.maxZ) * 0.5,
     };
     return center;
 }
 
-volumeBorder &Item::getBorders()
+VolumeBorder &Item::getBorders()
 {
     findBorders();
-    return borders;
+    return m_borders;
 }
 
 void Item::findBorders()
 {
-    if (!transform.size())
+    if (!m_transform.size())
     {
-        transform =
+        m_transform =
         {
             {1, 0, 0, 0},
             {0, 1, 0, 0},
@@ -156,7 +158,7 @@ void Item::findBorders()
         };
     }
     matrix current;
-    multiplyMatrix(vOriginal, transform, current);
+    multiplyMatrix(m_vOriginal, m_transform, current);
     double minX = current[0][0], maxX = current[0][0];
     double minY = current[0][1], maxY = current[0][1];
     double minZ = current[0][2], maxZ = current[0][2];
@@ -164,9 +166,9 @@ void Item::findBorders()
     {
         for (std::size_t i = 1; i < current.size(); i++)
         {
-            double currentX = current[i][0];
-            double currentY = current[i][1];
-            double currentZ = current[i][2];
+            const double currentX = current[i][0];
+            const double currentY = current[i][1];
+            const double currentZ = current[i][2];
             if (currentX > maxX) maxX = currentX;
             else if (currentX < minX) minX = currentX;
             if (currentY > maxY) maxY = currentY;
@@ -174,7 +176,7 @@ void Item::findBorders()
             if (currentZ > maxZ) maxZ = currentZ;
             else if (currentZ < minZ) minZ = currentZ;
         }
-        borders =
+        m_borders =
         {
             minX, maxX,
             minY, maxY,
@@ -183,11 +185,11 @@ void Item::findBorders()
     }
 }
 
-void Item::spinOY(double angle)
+void Item::spinOY(double t_angle)
 {
-    double radAngle = angle * PI / 180.;
+    double radAngle = t_angle * PI / 180.;
     findBorders();
-    point_t center = getCenter();
+    Point<double> center = getCenter();
     const matrix T =
     {
         {1, 0, 0, 0},
@@ -209,15 +211,15 @@ void Item::spinOY(double angle)
         {0, 0, 1, 0},
         {center.x, 0, center.z, 1}
     };
-    multiplyMatrix(transform, T);
-    multiplyMatrix(transform, rotate);
-    multiplyMatrix(transform, antiT);
+    multiplyMatrix(m_transform, T);
+    multiplyMatrix(m_transform, rotate);
+    multiplyMatrix(m_transform, antiT);
 }
 
-const matrix Item::topViewMatrix(double radAngle)
+const matrix Item::topViewMatrix(double t_radAngle)
 {
     findBorders();
-    point_t center = getCenter();
+    Point<double> center = getCenter();
     matrix current =
     {
         {1, 0, 0, 0},
@@ -230,13 +232,13 @@ const matrix Item::topViewMatrix(double radAngle)
         {1, 0, 0, 0},
         {0, 1, 0, 0},
         {0, 0, 1, 0},
-        {0, -center.y, -center.z, 1} // Possibly other sign on z...
+        {0, -center.y, -center.z, 1}
     };
     const matrix rotate =
     {
         {1, 0, 0, 0},
-        {0, cos(radAngle), -sin(radAngle), 0},
-        {0, sin(radAngle), cos(radAngle), 0},
+        {0, cos(t_radAngle), -sin(t_radAngle), 0},
+        {0, sin(t_radAngle), cos(t_radAngle), 0},
         {0, 0, 0, 1}
     };
     const matrix antiT =
@@ -244,7 +246,7 @@ const matrix Item::topViewMatrix(double radAngle)
         {1, 0, 0, 0},
         {0, 1, 0, 0},
         {0, 0, 1, 0},
-        {0, center.y, center.z, 1} // Possibly other sign on z...
+        {0, center.y, center.z, 1}
     };
     multiplyMatrix(current, T);
     multiplyMatrix(current, rotate);
@@ -252,9 +254,9 @@ const matrix Item::topViewMatrix(double radAngle)
     return current;
 }
 
-void Item::loadObj(const QString &dir, const QString &file)
+void Item::loadObj(const QString &t_dir, const QString &t_file)
 {
-    QString path = dir + "/" + file + ".obj";
+    QString path = t_dir + "/" + t_file + ".obj";
     QFile objFile(path);
     QTextStream pipeline(&objFile);
     pipeline.setCodec("Windows-1251");
@@ -263,94 +265,71 @@ void Item::loadObj(const QString &dir, const QString &file)
         qDebug() << "File not opened";
         return;
     }
-    QString line;
-    QStringList stringList;
-    std::vector<double> temp(3);
     QString currentMaterial;
     while(!pipeline.atEnd())
     {
-        line = pipeline.readLine();
-        stringList = line.split(" ", Qt::SkipEmptyParts);
+        const QString line = pipeline.readLine();
+        const QStringList stringList = line.split(" ", Qt::SkipEmptyParts);
         if (stringList.size())
         {
+            const QString parameter = stringList[0];
             // If 0 then similar
-            if (!QString::compare(stringList[0], "mtllib"))
+            if (!QString::compare(parameter, "mtllib"))
             {
-                QString path = dir + "/" + stringList[1];
+                QString path = t_dir + "/" + stringList[1];
                 loadMtl(path);
             }
-            else if (!QString::compare(stringList[0], "v"))
+            else if (!QString::compare(parameter, "v"))
             {
-                temp =
-                {
-                    stringList[1].toDouble(),
-                    stringList[2].toDouble(),
-                    stringList[3].toDouble(),
-                    1
-                };
-                vOriginal.push_back(temp);
+                m_vOriginal.push_back({ stringList[1].toDouble(),
+                                        stringList[2].toDouble(),
+                                        stringList[3].toDouble(), 1 });
             }
-            else if (!QString::compare(stringList[0], "vt"))
+            else if (!QString::compare(parameter, "vt"))
             {
-                temp =
-                {
-                    stringList[1].toDouble(),
-                    stringList[2].toDouble(),
-                    stringList[3].toDouble(),
-                    1
-                };
-                textures.push_back(temp);
+                m_textures.push_back({ stringList[1].toDouble(),
+                                       stringList[2].toDouble(),
+                                       stringList[3].toDouble(), 1 });
             }
-            else if (!QString::compare(stringList[0], "vn"))
+            else if (!QString::compare(parameter, "vn"))
             {
-                temp =
-                {
-                    stringList[1].toDouble(),
-                    stringList[2].toDouble(),
-                    stringList[3].toDouble(),
-                    1
-                };
-                nOriginal.push_back(temp);
+                m_nOriginal.push_back({ stringList[1].toDouble(),
+                                        stringList[2].toDouble(),
+                                        stringList[3].toDouble(), 1 });
             }
-            else if(!QString::compare(stringList[0], "usemtl"))
+            else if(!QString::compare(parameter, "usemtl"))
             {
                 currentMaterial = stringList[1];
             }
-            else if(!QString::compare(stringList[0], "f"))
+            else if(!QString::compare(parameter, "f"))
             {
-                QStringList polygonP1 = stringList[1].split("/", Qt::KeepEmptyParts);
-                QStringList polygonP2 = stringList[2].split("/", Qt::KeepEmptyParts);
-                QStringList polygonP3 = stringList[3].split("/", Qt::KeepEmptyParts);
-                polygon tempPolygon
+                const QStringList polygonP1 = stringList[1].split("/", Qt::KeepEmptyParts);
+                const QStringList polygonP2 = stringList[2].split("/", Qt::KeepEmptyParts);
+                const QStringList polygonP3 = stringList[3].split("/", Qt::KeepEmptyParts);
+                const Polygon tempPolygon
                 {
-                    // Material, points, normals, textures
+                    // Material, points, normals, m_textures
                     currentMaterial,
-                    {
-                        polygonP1[0].toULongLong() - 1,
-                        polygonP2[0].toULongLong() - 1,
-                        polygonP3[0].toULongLong() - 1,
-                    },
-                    {
-                        polygonP1[2].toULongLong() - 1,
-                        polygonP2[2].toULongLong() - 1,
-                        polygonP3[2].toULongLong() - 1,
-                    },
-                    {
-                        polygonP1[1].toULongLong() - 1,
-                        polygonP2[1].toULongLong() - 1,
-                        polygonP3[1].toULongLong() - 1,
-                    }
+                    polygonP1[0].toULongLong() - 1,
+                    polygonP2[0].toULongLong() - 1,
+                    polygonP3[0].toULongLong() - 1,
+                    polygonP1[2].toULongLong() - 1,
+                    polygonP2[2].toULongLong() - 1,
+                    polygonP3[2].toULongLong() - 1,
+                    polygonP1[1].toULongLong() - 1,
+                    polygonP2[1].toULongLong() - 1,
+                    polygonP3[1].toULongLong() - 1
                 };
-                polygons.append(tempPolygon);
+                m_polygons.append(tempPolygon);
             }
         }
     }
     objFile.close();
 }
 
-void Item::loadMtl(const QString &path)
+void Item::loadMtl(const QString &t_path)
 {
-    QFile mtlFile(path);
+    QFile mtlFile(t_path);
     QTextStream pipeline(&mtlFile);
     pipeline.setCodec("Windows-1251");
     if (!mtlFile.open(QIODevice::ReadOnly))
@@ -358,163 +337,119 @@ void Item::loadMtl(const QString &path)
         qDebug() << "File not opened";
         return;
     }
-    QString line;
-    QStringList stringList;
     QString currentMaterial;
-    material temp;
+    Material temp{0, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0, 0};
     bool materialEnd = false;
-    // End of file status
     bool eof = false;
     while(!eof)
     {
-        line = pipeline.readLine();
-        stringList = line.split(" ", Qt::SkipEmptyParts);
+        const QString line = pipeline.readLine();
+        const QStringList stringList = line.split(" ", Qt::SkipEmptyParts);
         if (stringList.size())
         {
+            const QString parameter = stringList[0];
             // If 0 then similar
-            if (!QString::compare(stringList[0], "newmtl"))
+            if (!QString::compare(parameter, "newmtl"))
             {
                 if (materialEnd)
                 {
                     // Load to QMap
-                    materialMap.insert(currentMaterial, temp);
+                    m_materialMap.insert(currentMaterial, temp);
                 }
                 // illum, ka, kd, ks, ni, ns
-                temp = {0, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0, 0};
+                Material temp = {0, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0, 0};
                 currentMaterial = stringList[1];
                 materialEnd = true;
             }
-            else if (!QString::compare(stringList[0], "illum"))
+            else if (!QString::compare(parameter, "illum"))
             {
                 temp.illum = stringList[1].toInt();
             }
-            else if (!QString::compare(stringList[0], "Ka"))
+            else if (!QString::compare(parameter, "Ka"))
             {
-                temp.ka.setRedF(stringList[1].toDouble());
-                temp.ka.setGreenF(stringList[2].toDouble());
-                temp.ka.setBlueF(stringList[3].toDouble());
+                temp.ka.setRgbF(stringList[1].toDouble(), stringList[2].toDouble(),
+                        stringList[3].toDouble());
             }
-            else if (!QString::compare(stringList[0], "Kd"))
+            else if (!QString::compare(parameter, "Kd"))
             {
-                temp.kd.setRedF(stringList[1].toDouble());
-                temp.kd.setGreenF(stringList[2].toDouble());
-                temp.kd.setBlueF(stringList[3].toDouble());
+                temp.kd.setRgbF(stringList[1].toDouble(), stringList[2].toDouble(),
+                        stringList[3].toDouble());
             }
-            else if (!QString::compare(stringList[0], "Ks"))
+            else if (!QString::compare(parameter, "Ks"))
             {
-                temp.ks.setRedF(stringList[1].toDouble());
-                temp.ks.setGreenF(stringList[2].toDouble());
-                temp.ks.setBlueF(stringList[3].toDouble());
+                temp.ks.setRgbF(stringList[1].toDouble(), stringList[2].toDouble(),
+                        stringList[3].toDouble());
             }
-            else if (!QString::compare(stringList[0], "Ns"))
+            else if (!QString::compare(parameter, "Ns"))
             {
                 temp.ns = stringList[1].toDouble();
             }
-            else if (!QString::compare(stringList[0], "Ni"))
+            else if (!QString::compare(parameter, "Ni"))
             {
                 temp.ni = stringList[1].toDouble();
             }
             eof = pipeline.atEnd();
             if (eof)
             {
-                materialMap.insert(currentMaterial, temp);
+                m_materialMap.insert(currentMaterial, temp);
             }
         }
     }
     mtlFile.close();
 }
 
-void Item::rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double radAngle)
+void Item::rasterise(const matrix &t_projection, const int &t_imageWidth,
+                     const int &t_imageHeight, double t_radAngle)
 {
-/*
-    double distance = floorLevel - borders.minY;
-    if (abs(distance) < 1e-5) distance = 0;
-    else
-    {
-        transform[3][1] += distance;
-        borders.maxY += distance;
-        borders.minY += distance;
-    }
-    transform =
-    {
-        {1, 0, 0, 0},
-        {0, 1, 0, 0},
-        {0, 0, -1, 0},
-        {0, 0, distance, 1}
-    };
-
-    const matrix rotateDown = topViewMatrix(radAngle);
-    matrix temp = transform;
-    multiplyMatrix(temp, rotateDown);
-    multiplyMatrix(vOriginal, temp, vPerspective);
-    temp[3][0] = 0;
-    temp[3][1] = 0;
-    temp[3][2] = 0;
-    multiplyMatrix(nOriginal, temp, nPerspective);
-
-
-    multiplyMatrix(vOriginal, transform, vPerspective);
-    double transX = transform[3][0];
-    double transY = transform[3][1];
-    double transZ = transform[3][2];
-    transform[3][0] = 0;
-    transform[3][1] = 0;
-    transform[3][2] = 0;
-    multiplyMatrix(nOriginal, transform, nPerspective);
-    transform[3][0] = transX;
-    transform[3][1] = transY;
-    transform[3][2] = transZ;
-    multiplyMatrix(vPerspective, projection);
-*/
-
-    multiplyMatrix(vOriginal, transform, vPerspective);
-    double transX = transform[3][0];
-    double transY = transform[3][1];
-    double transZ = transform[3][2];
-    transform[3][0] = 0;
-    transform[3][1] = 0;
-    transform[3][2] = 0;
-    multiplyMatrix(nOriginal, transform, nPerspective);
-    transform[3][0] = transX;
-    transform[3][1] = transY;
-    transform[3][2] = transZ;
-    multiplyMatrix(vPerspective, projection);
+    multiplyMatrix(m_vOriginal, m_transform, m_vPerspective);
+    double transX = m_transform[3][0];
+    double transY = m_transform[3][1];
+    double transZ = m_transform[3][2];
+    m_transform[3][0] = 0;
+    m_transform[3][1] = 0;
+    m_transform[3][2] = 0;
+    multiplyMatrix(m_nOriginal, m_transform, m_nPerspective);
+    m_transform[3][0] = transX;
+    m_transform[3][1] = transY;
+    m_transform[3][2] = transZ;
+    multiplyMatrix(m_vPerspective, t_projection);
 
     // Convert to raster DO NOT TOUCH!
-    for (size_t i = 0; i < vPerspective.size(); i++)
+    for (size_t i = 0; i < m_vPerspective.size(); i++)
     {
-        if (!qIsNull(vPerspective[i][3]))
+        if (!qIsNull(m_vPerspective[i][3]))
         {
             // Normalise if w is different than zero
-            double coeff = 1 / vPerspective[i][3];
-            vPerspective[i][0] *= coeff;
-            vPerspective[i][1] *= coeff;
-            vPerspective[i][2] *= coeff;
+            double coeff = 1 / m_vPerspective[i][3];
+            m_vPerspective[i][0] *= coeff;
+            m_vPerspective[i][1] *= coeff;
+            m_vPerspective[i][2] *= coeff;
         }
-        vPerspective[i][0]++;
-        vPerspective[i][1] *= -1;
-        vPerspective[i][1]++;
+        m_vPerspective[i][0]++;
+        m_vPerspective[i][1] *= -1;
+        m_vPerspective[i][1]++;
 //        const int ratio = std::min(imageWidth, imageHeight);
-        vPerspective[i][0] *= 0.5 * imageWidth;
-        vPerspective[i][1] *= 0.5 * imageHeight;
-        vPerspective[i][2] *= -1;
+        m_vPerspective[i][0] *= 0.5 * t_imageWidth;
+        m_vPerspective[i][1] *= 0.5 * t_imageHeight;
+        m_vPerspective[i][2] *= -1;
     }
 }
 
-void Item::render(matrix &buffer, QImage &image, QMap<QString, Item *> &clickSearch, const int &width, const int &height)
+void Item::render(matrix &t_buffer, QImage &t_image, QMap<QString, Item *> &t_clickSearch,
+                  const int &t_width, const int &t_height)
 {
-    ldx = width;
-    ldy = height;
-    rux = 0;
-    ruy = 0;
+    m_ldx = t_width;
+    m_ldy = t_height;
+    m_rux = 0;
+    m_ruy = 0;
     // Camera position, move to camera struct later
     std::vector<double> camera = {0, 0, 0};
-    for (int i = 0; i < polygons.size(); i++)
+    for (int i = 0; i < m_polygons.size(); i++)
     {
         // Polygon points
-        const std::vector<double> p1 = vPerspective[polygons[i].points[0]];
-        const std::vector<double> p2 = vPerspective[polygons[i].points[1]];
-        const std::vector<double> p3 = vPerspective[polygons[i].points[2]];
+        const std::vector<double> p1 = m_vPerspective[m_polygons[i].points[0]];
+        const std::vector<double> p2 = m_vPerspective[m_polygons[i].points[1]];
+        const std::vector<double> p3 = m_vPerspective[m_polygons[i].points[2]];
         /* Polygon normal:
          * Cross product of two vectors on the plane
          * p1->p2 and p1->p3
@@ -544,25 +479,25 @@ void Item::render(matrix &buffer, QImage &image, QMap<QString, Item *> &clickSea
             const double ymin = std::min(p1[1], std::min(p2[1], p3[1]));
             const double xmax = std::max(p1[0], std::max(p2[0], p3[0]));
             const double ymax = std::max(p1[1], std::max(p2[1], p3[1]));
-            if (!(xmin > width - 1 || xmax < 0 || ymin > height - 1 || ymax < 0))
+            if (!(xmin > t_width - 1 || xmax < 0 || ymin > t_height - 1 || ymax < 0))
             {
                 // Starting points of interpolation
                 const int x0 = std::max(0, int(xmin));
-                const int x1 = std::min(width - 1, int(xmax));
+                const int x1 = std::min(t_width - 1, int(xmax));
                 const int y0 = std::max(0, int(ymin));
-                const int y1 = std::min(height - 1, int(ymax));
+                const int y1 = std::min(t_height - 1, int(ymax));
 
                 // Border coords
-                if (x0 < ldx) ldx = x0;
-                if (x1 > rux) rux = x1;
-                if (y0 < ldy) ldy = y0;
-                if (y1 > ruy) ruy = y1;
+                if (x0 < m_ldx) m_ldx = x0;
+                if (x1 > m_rux) m_rux = x1;
+                if (y0 < m_ldy) m_ldy = y0;
+                if (y1 > m_ruy) m_ruy = y1;
 
                 double area = edgeCheck(p1, p2, p3);
 
-                const std::vector<double> n1 = nPerspective[polygons[i].normals[0]];
-                const std::vector<double> n2 = nPerspective[polygons[i].normals[1]];
-                const std::vector<double> n3 = nPerspective[polygons[i].normals[2]];
+                const std::vector<double> n1 = m_nPerspective[m_polygons[i].normals[0]];
+                const std::vector<double> n2 = m_nPerspective[m_polygons[i].normals[1]];
+                const std::vector<double> n3 = m_nPerspective[m_polygons[i].normals[2]];
                 for (int y = y0; y <= y1; y++)
                 {
                     for (int x = x0; x <= x1; x++)
@@ -579,21 +514,21 @@ void Item::render(matrix &buffer, QImage &image, QMap<QString, Item *> &clickSea
                             w3 *= coeff;
                             double oneOverZ = p1[2] * w1 + p2[2] * w2 + p3[2] * w3;
                             double z = 1 / oneOverZ;
-                            if (z < buffer[x][y])
+                            if (z < t_buffer[x][y])
                             {
-                                buffer[x][y] = z;
+                                t_buffer[x][y] = z;
                                 double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
-                                QColor ambientColor = materialMap[polygons[i].materialKey].ka;
-                                QColor diffuseColor = materialMap[polygons[i].materialKey].kd;
+                                QColor ambientColor = m_materialMap[m_polygons[i].materialKey].ka;
+                                QColor diffuseColor = m_materialMap[m_polygons[i].materialKey].kd;
                                 qreal ar, ag, ab;
                                 qreal dr, dg, db;
                                 ambientColor.getRgbF(&ar, &ag, &ab);
                                 diffuseColor.getRgbF(&dr, &dg, &db);
                                 ambientColor.setRgbF((ar + dr * cosn) / 2, (ag + dg * cosn) / 2, (ab + db * cosn) / 2);
-                                image.setPixelColor(x, y, ambientColor);
+                                t_image.setPixelColor(x, y, ambientColor);
                                 const QString key = QString::number(x) + "." + QString::number(y);
-                                clickSearch[key] = this;
-                                /* Debug polygons
+                                t_clickSearch[key] = this;
+                                /* Debug m_polygons
                                     QColor fillColor;
                                     qreal r = w1 * 0 + w2 * 0 + w3 * 1;
                                     qreal g = w1 * 0 + w2 * 1 + w3 * 0;
@@ -612,29 +547,23 @@ void Item::render(matrix &buffer, QImage &image, QMap<QString, Item *> &clickSea
             }
         }
     }
-    if (isClicked) outline(image);
-}
-
-double Item::edgeCheck(const std::vector<double> &a, const std::vector<double> &b, const std::vector<double> &c)
-{
-//    return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
-    return (a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) * (b[0] - c[0]);
+    if (m_isClicked) outline(t_image);
 }
 
 bool Item::changeIsClicked()
 {
-    isClicked = !isClicked;
-    return isClicked;
+    m_isClicked = !m_isClicked;
+    return m_isClicked;
 }
 
-void Item::outline(QImage &image)
+void Item::outline(QImage &t_image)
 {
     // Connect bounding box
     QColor line_color(0, 0, 0);
-    int x0 = ldx;
-    int y0 = ldy;
+    int x0 = m_ldx;
+    int y0 = m_ldy;
     int r, g, b;
-    int direction[4][2] = {{ldx, ruy}, {rux, ruy}, {rux, ldy}, {ldx, ldy}};
+    int direction[4][2] = {{m_ldx, m_ruy}, {m_rux, m_ruy}, {m_rux, m_ldy}, {m_ldx, m_ldy}};
     for (int i = 0; i < 4; i++)
     {
         int x1 = direction[i][0];
@@ -645,13 +574,13 @@ void Item::outline(QImage &image)
         int signY = y0 < y1 ? 1 : -1;
         int error = dx - dy;
         int double_error = 0;
-        image.setPixel(x1, y1, line_color.rgba());
+        t_image.setPixel(x1, y1, line_color.rgba());
         while(x0 != x1 || y0 != y1)
         {
-            QColor contrastColor(image.pixel(x0, y0));
+            QColor contrastColor(t_image.pixel(x0, y0));
             contrastColor.getRgb(&r, &g, &b);
-            contrastColor.setRgb(127 - r, 127 - g, 127 - b);
-            image.setPixel(x0, y0, contrastColor.rgba());
+            contrastColor.setRgb(abs(255 - r), abs(255 - g), abs(255 - b));
+            t_image.setPixel(x0, y0, contrastColor.rgba());
             double_error = error << 1;
             if (double_error > -dy)
             {

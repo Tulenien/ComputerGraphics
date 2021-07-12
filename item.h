@@ -14,21 +14,18 @@
 
 typedef std::vector<std::vector<double>> matrix;
 
-struct point_t
+template<typename T>
+struct Point
 {
-    double x;
-    double y;
-    double z;
+    T x;
+    T y;
+    T z;
+
+    Point (int t_x, int t_y, int t_z) : x(t_x), y(t_y), z(t_z){}
+    Point (double t_x, double t_y, double t_z) : x(t_x), y(t_y), z(t_z){}
 };
 
-struct intPoint_t
-{
-    int x;
-    int y;
-    int z;
-};
-
-struct polygon
+struct Polygon
 {
     // QMap dictionary key
     QString materialKey;
@@ -36,9 +33,19 @@ struct polygon
     std::size_t points[3];
     std::size_t normals[3];
     std::size_t textures[3];
+
+    Polygon() {}
+
+    Polygon(const QString &t_materialKey,
+            std::size_t p1, std::size_t p2, std::size_t p3,
+            std::size_t n1, std::size_t n2, std::size_t n3,
+            std::size_t t1, std::size_t t2, std::size_t t3)
+        : materialKey(t_materialKey), points{p1, p2, p3},
+          normals{n1, n2, n3}, textures{t1, t2, t3}{}
+
 };
 
-struct material
+struct Material
 {
     double illum; // Illumination model
     QColor ka;    // Ambient color
@@ -46,65 +53,79 @@ struct material
     QColor ks;    // Specular color
     double ni;    // Optical density
     double ns;    // Focus of specular highlights
+
+    Material() {}
+
+    Material(double t_illum, QColor t_ka, QColor t_kd, QColor t_ks, double t_ni, double t_ns)
+        : illum(t_illum), ka(t_ka), kd(t_kd), ks(t_ks), ni(t_ni), ns(t_ns){}
 };
 
-struct volumeBorder
+struct VolumeBorder
 {
     double minX, maxX;
     double minY, maxY;
     double minZ, maxZ;
+
+    VolumeBorder(double t_minx, double t_maxx, double t_miny, double t_maxy, double t_minz, double t_maxz)
+        : minX(t_minx), maxX(t_maxx), minY(t_miny), maxY(t_maxy), minZ(t_minz), maxZ(t_maxz){}
 };
 
-struct XY { int x, y; };
+struct XY
+{
+    int x, y;
+
+    XY(int x_t, int y_t) : x(x_t), y(y_t){}
+};
 
 class Item
 {
 public:
-    Item(const QString &dir, const QString &file);
-    point_t getCenter();
-    volumeBorder &getBorders();
-    bool ageCheck(){ return isNew; }
-    void ageChange(){ isNew = false; }
+    Item(const QString &t_dir, const QString &t_file);
+    Point<double> getCenter();
+    VolumeBorder &getBorders();
+    bool ageCheck() const { return m_isNew; }
+    void ageChange() { m_isNew = false; }
 
-    void move(double x, double y, double z);
+    void move(double t_x, double t_y, double t_z);
     // Rotate with scene
-    void rotateOY(double angle);
-    void rotateOX(double angle);
-    void rotateOZ(double angle);
+    void rotateOY(double t_angle);
+    void rotateOX(double t_angle);
+    void rotateOZ(double t_angle);
     // Self-rotate
-    void spinOY(double angle);
-    void spinOX(double angle); // Deleted
-    const matrix topViewMatrix(double radAngle);
-    void rasterise(const matrix &projection, const int &imageWidth, const int &imageHeight, double radAngle);
-    void render(matrix &buffer, QImage &image, QMap<QString, Item *> &clickSearch, const int &width, const int &height);
+    void spinOY(double t_angle);
+    const matrix topViewMatrix(double t_radAngle);
+    void rasterise(const matrix &t_projection, const int &t_imageWidth,
+                   const int &t_imageHeight, double t_radAngle);
+    void render(matrix &t_buffer, QImage &t_image, QMap<QString, Item *> &t_clickSearch,
+                const int &t_width, const int &t_height);
     bool changeIsClicked();
-    void outline(QImage &image);
+    void outline(QImage &t_image);
 
 private:
+    bool m_isNew;
+    bool m_isClicked;
+    VolumeBorder m_borders;
     // Border left-down and right-up screen coordinates
-    int ldx, ldy, rux, ruy;
-    bool isNew = true;
-    bool isClicked = false;
-    volumeBorder borders =
-    {
-        qInf(), qInf(),
-        qInf(), qInf(),
-        qInf(), qInf()
-    };
-    matrix vOriginal, nOriginal;
-    matrix transform;
-    matrix vPerspective, nPerspective;
-    matrix textures;
+    QList<Polygon> m_polygons;
+    QMap<QString, Material> m_materialMap;
+
+    int m_ldx, m_ldy, m_rux, m_ruy;
+    matrix m_vOriginal, m_nOriginal;
+    matrix m_transform;
+    matrix m_vPerspective, m_nPerspective;
+    matrix m_textures;
 
     void findBorders();
     bool multiplyMatrix(matrix &A, const matrix &B);
     bool multiplyMatrix(const matrix &A, const matrix &B, matrix &C);
     void loadObj(const QString &dir, const QString &file);
     void loadMtl(const QString &path);
-    QMap<QString, material> materialMap;
-    QList<polygon> polygons;
 
-    double edgeCheck(const std::vector<double> &a, const std::vector<double> &b, const std::vector<double> &c);
+    double edgeCheck(const std::vector<double> &t_a, const std::vector<double> &t_b, const std::vector<double> &t_c) const
+    {
+        //    return (t_c[0] - t_a[0]) * (t_b[1] - t_a[1]) - (t_c[1] - t_a[1]) * (t_b[0] - t_a[0]);
+        return (t_a[0] - t_c[0]) * (t_b[1] - t_c[1]) - (t_a[1] - t_c[1]) * (t_b[0] - t_c[0]);
+    }
 };
 
 #endif // ITEM_H

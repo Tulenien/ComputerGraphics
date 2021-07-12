@@ -9,49 +9,49 @@
  * Add 3D Clipping method
  */
 
-struct camera
+struct Camera
 {
     double fov;
     double near;
     double far;
+
+    Camera(double t_fov, double t_near, double t_far): fov(t_fov), near(t_near), far(t_far){}
 };
 
 class Scene : public QLabel
 {
     Q_OBJECT
 public:
-    Scene(QWidget*& parent);
-    void addItem(QString dir, QString item);
-    void deleteItem(int index);
+    Scene(QWidget*& t_parent);
+    void addItem(QString t_dir, QString t_item);
+    void deleteItem(int t_index);
     void deleteItems();
-    void setSize(const double &width, const double &length, const double &height);
-    void changeViewMode() { viewMode = !viewMode; }
-    double getWidth() const { return width; }
-    double getLength() const { return length; }
-    double getHeight() const { return height; }
-    bool getViewMode() const { return viewMode; }
-    void rotateSceneOY(double angle);
-    Item &getItemByIndex(int index);
+    void setSize(const double &t_width, const double &t_length, const double &t_height);
+    void changeViewMode() { m_viewMode = !m_viewMode; }
+    double getWidth() const { return m_width; }
+    double getLength() const { return m_length; }
+    double getHeight() const { return m_height; }
+    bool getViewMode() const { return m_viewMode; }
+    void rotateSceneOY(double t_angle);
+    Item &getItemByIndex(int t_index);
     void renderScene();
 
 private:
     QWidget *m_parent;
-    bool viewMode = true;
-    int imageWidth, imageHeight;
-    double imageTop, imageRight, imageBottom, imageLeft;
-    camera cam;
-    QImage *image;
-    QVector<Item> items;
-    QMap<QString, Item *> clickSearch;
-    matrix depthBuffer;
-    double width, length, height;
+    Camera m_camera;
+    QImage *m_image;
+    bool m_viewMode;
+    int m_imageWidth, m_imageHeight;
+    double m_width, m_length, m_height;
+    matrix m_depthBuffer;
+    QVector<Item> m_items;
+    QMap<QString, Item *> m_clickSearch;
 
-    void resizeEvent(QResizeEvent *event);
-    void computeScreenCoordinates();
     void setupImage();
-    const matrix computeProjectionMatrix();
-    const matrix computeOrthographicMatrix();
-    void mousePressEvent(QMouseEvent *event);
+    const matrix *computeProjectionMatrix();
+    const matrix *computeOrthographicMatrix();
+    void resizeEvent(QResizeEvent *t_event);
+    void mousePressEvent(QMouseEvent *t_event);
 };
 
 #endif // SCENE_H
