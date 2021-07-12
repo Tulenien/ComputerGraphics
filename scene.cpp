@@ -1,7 +1,7 @@
 ﻿#include "scene.h"
 
-Scene::Scene(QWidget *parent)
-    : width(200), length(200), height(250)
+Scene::Scene(QWidget*& parent)
+    : m_parent(parent), width(200), length(200), height(250)
 {
     this->setMinimumSize(640, 480);
     QSize size = this->size();
@@ -13,6 +13,7 @@ Scene::Scene(QWidget *parent)
 
 void Scene::resizeEvent(QResizeEvent *event)
 {
+    event->accept();
     QImage other(this->size(), QImage::Format_RGBA8888);
     imageWidth = this->size().width();
     imageHeight = this->size().height();

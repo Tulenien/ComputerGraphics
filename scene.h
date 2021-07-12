@@ -20,7 +20,7 @@ class Scene : public QLabel
 {
     Q_OBJECT
 public:
-    Scene(QWidget *parent);
+    Scene(QWidget*& parent);
     void addItem(QString dir, QString item);
     void deleteItem(int index);
     void deleteItems();
@@ -35,6 +35,7 @@ public:
     void renderScene();
 
 private:
+    QWidget *m_parent;
     bool viewMode = true;
     int imageWidth, imageHeight;
     double imageTop, imageRight, imageBottom, imageLeft;
