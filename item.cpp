@@ -1,11 +1,25 @@
 ﻿#include "item.h"
 
+constexpr int AV_VERTEX_COUNT = 2500;
+constexpr int AV_NORMAL_COUNT = 6200;
+constexpr int AV_TEXTURE_COUNT = 160;
+constexpr int RGB_MAX = 255;
+
+constexpr double FULL_ANGLE = 180.;
+constexpr double HALF = 0.5;
+
 Item::Item(const QString &t_dir, const QString &t_file)
     :  m_isNew(true), m_isClicked(false),
        m_borders(qInf(), qInf(), qInf(), qInf(), qInf(), qInf())
 {
-    // Load mtl file inside
     m_isClicked = false;
+
+    m_vOriginal.reserve(AV_VERTEX_COUNT);
+    m_nOriginal.reserve(AV_NORMAL_COUNT);
+    m_textures.reserve(AV_TEXTURE_COUNT);
+
+    m_vPerspective.reserve(AV_VERTEX_COUNT);
+    m_nPerspective.reserve(AV_NORMAL_COUNT);
     loadObj(t_dir, t_file);
 }
 
@@ -21,6 +35,7 @@ bool Item::multiplyMatrix(matrix &t_A, const matrix &t_B)
     else
     {
         matrix temp;
+        temp.reserve(rows);
         for (std::size_t i = 0; i < rows; i++)
         {
             std::vector<double> row(cols);
@@ -31,12 +46,13 @@ bool Item::multiplyMatrix(matrix &t_A, const matrix &t_B)
                     row[j] += t_A[i][k] * t_B[k][j];
                 }
             }
-            temp.push_back(row);
+            temp.emplace_back(row);
         }
         t_A.clear();
+        t_A.reserve(rows);
         for (std::size_t i = 0; i < rows; i++)
         {
-            t_A.push_back(temp[i]);
+            t_A.emplace_back(temp[i]);
         }
     }
     return status;
@@ -50,17 +66,18 @@ bool Item::multiplyMatrix(const matrix &t_A, const matrix &t_B, matrix &t_C)
     std::size_t rows = t_A.size();
     std::size_t cols = t_B[0].size();
     std::size_t nest = t_B.size();
-    if (t_C.size())
+    if (!t_C.empty())
     {
-        for (size_t i = 0; i < t_C.size(); i++)
+        for (std::vector<double> &c : t_C)
         {
-            t_C[i].clear();
+            c.clear();
         }
         t_C.clear();
     }
     if (t_A[0].size() != nest) status = false;
     else
     {
+        t_C.reserve(rows);
         for (std::size_t i = 0; i < rows; i++)
         {
             std::vector<double> row(cols);
@@ -71,7 +88,7 @@ bool Item::multiplyMatrix(const matrix &t_A, const matrix &t_B, matrix &t_C)
                     row[j] += t_A[i][k] * t_B[k][j];
                 }
             }
-            t_C.push_back(row);
+            t_C.emplace_back(row);
         }
     }
     return status;
@@ -79,7 +96,7 @@ bool Item::multiplyMatrix(const matrix &t_A, const matrix &t_B, matrix &t_C)
 
 void Item::rotateOX(double t_angle)
 {
-    double radAngle = t_angle * PI / 180.;
+    double radAngle = t_angle * PI / FULL_ANGLE;
     const matrix rotate =
     {
         {1, 0, 0, 0},
@@ -92,7 +109,7 @@ void Item::rotateOX(double t_angle)
 
 void Item::rotateOY(double t_angle)
 {
-    double radAngle = t_angle * PI / 180.;
+    double radAngle = t_angle * PI / FULL_ANGLE;
     const matrix rotate =
     {
         {cos(radAngle), 0, sin(radAngle), 0},
@@ -105,7 +122,7 @@ void Item::rotateOY(double t_angle)
 
 void Item::rotateOZ(double t_angle)
 {
-    double radAngle = t_angle * PI / 180.;
+    double radAngle = t_angle * PI / FULL_ANGLE;
     const matrix rotate =
     {
         {cos(radAngle), sin(radAngle), 0, 0},
@@ -132,9 +149,9 @@ Point<double> Item::getCenter()
 {
     Point<double> center =
     {
-        (m_borders.minX + m_borders.maxX) * 0.5,
-        (m_borders.minY + m_borders.maxY) * 0.5,
-        (m_borders.minZ + m_borders.maxZ) * 0.5,
+        (m_borders.minX + m_borders.maxX) * HALF,
+        (m_borders.minY + m_borders.maxY) * HALF,
+        (m_borders.minZ + m_borders.maxZ) * HALF,
     };
     return center;
 }
@@ -147,7 +164,7 @@ VolumeBorder &Item::getBorders()
 
 void Item::findBorders()
 {
-    if (!m_transform.size())
+    if (m_transform.empty())
     {
         m_transform =
         {
@@ -159,9 +176,12 @@ void Item::findBorders()
     }
     matrix current;
     multiplyMatrix(m_vOriginal, m_transform, current);
-    double minX = current[0][0], maxX = current[0][0];
-    double minY = current[0][1], maxY = current[0][1];
-    double minZ = current[0][2], maxZ = current[0][2];
+    double minX = current[0][0];
+    double maxX = current[0][0];
+    double minY = current[0][1];
+    double maxY = current[0][1];
+    double minZ = current[0][2];
+    double maxZ = current[0][2];
     if (current.size() > 1)
     {
         for (std::size_t i = 1; i < current.size(); i++)
@@ -187,7 +207,7 @@ void Item::findBorders()
 
 void Item::spinOY(double t_angle)
 {
-    double radAngle = t_angle * PI / 180.;
+    double radAngle = t_angle * PI / FULL_ANGLE;
     findBorders();
     Point<double> center = getCenter();
     const matrix T =
@@ -216,7 +236,7 @@ void Item::spinOY(double t_angle)
     multiplyMatrix(m_transform, antiT);
 }
 
-const matrix Item::topViewMatrix(double t_radAngle)
+matrix Item::topViewMatrix(double t_radAngle)
 {
     findBorders();
     Point<double> center = getCenter();
@@ -270,7 +290,7 @@ void Item::loadObj(const QString &t_dir, const QString &t_file)
     {
         const QString line = pipeline.readLine();
         const QStringList stringList = line.split(" ", Qt::SkipEmptyParts);
-        if (stringList.size())
+        if (!stringList.empty())
         {
             const QString parameter = stringList[0];
             // If 0 then similar
@@ -281,21 +301,21 @@ void Item::loadObj(const QString &t_dir, const QString &t_file)
             }
             else if (!QString::compare(parameter, "v"))
             {
-                m_vOriginal.push_back({ stringList[1].toDouble(),
-                                        stringList[2].toDouble(),
-                                        stringList[3].toDouble(), 1 });
+                m_vOriginal.push_back({stringList[1].toDouble(),
+                                         stringList[2].toDouble(),
+                                         stringList[3].toDouble(), 1.});
             }
             else if (!QString::compare(parameter, "vt"))
             {
                 m_textures.push_back({ stringList[1].toDouble(),
-                                       stringList[2].toDouble(),
-                                       stringList[3].toDouble(), 1 });
+                                         stringList[2].toDouble(),
+                                         stringList[3].toDouble(), 1.});
             }
             else if (!QString::compare(parameter, "vn"))
             {
-                m_nOriginal.push_back({ stringList[1].toDouble(),
-                                        stringList[2].toDouble(),
-                                        stringList[3].toDouble(), 1 });
+                m_nOriginal.push_back( {stringList[1].toDouble(),
+                                          stringList[2].toDouble(),
+                                          stringList[3].toDouble(), 1.});
             }
             else if(!QString::compare(parameter, "usemtl"))
             {
@@ -324,6 +344,9 @@ void Item::loadObj(const QString &t_dir, const QString &t_file)
             }
         }
     }
+    m_vOriginal.shrink_to_fit();
+    m_nOriginal.shrink_to_fit();
+    m_textures.shrink_to_fit();
     objFile.close();
 }
 
@@ -345,7 +368,7 @@ void Item::loadMtl(const QString &t_path)
     {
         const QString line = pipeline.readLine();
         const QStringList stringList = line.split(" ", Qt::SkipEmptyParts);
-        if (stringList.size())
+        if (!stringList.empty())
         {
             const QString parameter = stringList[0];
             // If 0 then similar
@@ -399,9 +422,10 @@ void Item::loadMtl(const QString &t_path)
 }
 
 void Item::rasterise(const matrix &t_projection, const int &t_imageWidth,
-                     const int &t_imageHeight, double t_radAngle)
+                     const int &t_imageHeight)
 {
     multiplyMatrix(m_vOriginal, m_transform, m_vPerspective);
+    m_vPerspective.shrink_to_fit();
     double transX = m_transform[3][0];
     double transY = m_transform[3][1];
     double transZ = m_transform[3][2];
@@ -409,29 +433,32 @@ void Item::rasterise(const matrix &t_projection, const int &t_imageWidth,
     m_transform[3][1] = 0;
     m_transform[3][2] = 0;
     multiplyMatrix(m_nOriginal, m_transform, m_nPerspective);
+    m_nOriginal.shrink_to_fit();
     m_transform[3][0] = transX;
     m_transform[3][1] = transY;
     m_transform[3][2] = transZ;
     multiplyMatrix(m_vPerspective, t_projection);
 
-    // Convert to raster DO NOT TOUCH!
-    for (size_t i = 0; i < m_vPerspective.size(); i++)
+
+
+//    for (size_t i = 0; i < m_vPerspective.size(); i++)
+    for (std::vector<double> &row : m_vPerspective)
     {
-        if (!qIsNull(m_vPerspective[i][3]))
+        if (!qIsNull(row[3]))
         {
             // Normalise if w is different than zero
-            double coeff = 1 / m_vPerspective[i][3];
-            m_vPerspective[i][0] *= coeff;
-            m_vPerspective[i][1] *= coeff;
-            m_vPerspective[i][2] *= coeff;
+            double coeff = 1 / row[3];
+            row[0] *= coeff;
+            row[1] *= coeff;
+            row[2] *= coeff;
         }
-        m_vPerspective[i][0]++;
-        m_vPerspective[i][1] *= -1;
-        m_vPerspective[i][1]++;
+        row[0]++;
+        row[1] *= -1;
+        row[1]++;
 //        const int ratio = std::min(imageWidth, imageHeight);
-        m_vPerspective[i][0] *= 0.5 * t_imageWidth;
-        m_vPerspective[i][1] *= 0.5 * t_imageHeight;
-        m_vPerspective[i][2] *= -1;
+        row[0] *= HALF * t_imageWidth;
+        row[1] *= HALF * t_imageHeight;
+        row[2] *= -1;
     }
 }
 
@@ -444,12 +471,12 @@ void Item::render(matrix &t_buffer, QImage &t_image, QMap<QString, Item *> &t_cl
     m_ruy = 0;
     // Camera position, move to camera struct later
     std::vector<double> camera = {0, 0, 0};
-    for (int i = 0; i < m_polygons.size(); i++)
+    for (Polygon &m_polygon : m_polygons)
     {
         // Polygon points
-        const std::vector<double> p1 = m_vPerspective[m_polygons[i].points[0]];
-        const std::vector<double> p2 = m_vPerspective[m_polygons[i].points[1]];
-        const std::vector<double> p3 = m_vPerspective[m_polygons[i].points[2]];
+        const std::vector<double> p1 = m_vPerspective[m_polygon.points[0]];
+        const std::vector<double> p2 = m_vPerspective[m_polygon.points[1]];
+        const std::vector<double> p3 = m_vPerspective[m_polygon.points[2]];
         /* Polygon normal:
          * Cross product of two vectors on the plane
          * p1->p2 and p1->p3
@@ -495,14 +522,14 @@ void Item::render(matrix &t_buffer, QImage &t_image, QMap<QString, Item *> &t_cl
 
                 double area = edgeCheck(p1, p2, p3);
 
-                const std::vector<double> n1 = m_nPerspective[m_polygons[i].normals[0]];
-                const std::vector<double> n2 = m_nPerspective[m_polygons[i].normals[1]];
-                const std::vector<double> n3 = m_nPerspective[m_polygons[i].normals[2]];
+                const std::vector<double> n1 = m_nPerspective[m_polygon.normals[0]];
+                const std::vector<double> n2 = m_nPerspective[m_polygon.normals[1]];
+                const std::vector<double> n3 = m_nPerspective[m_polygon.normals[2]];
                 for (int y = y0; y <= y1; y++)
                 {
                     for (int x = x0; x <= x1; x++)
                     {
-                        std::vector<double> sample = {x + 0.5, y + 0.5, 0.};
+                        std::vector<double> sample = {x + HALF, y + HALF, 0.};
                         double w1 = edgeCheck(p2, p3, sample);
                         double w2 = edgeCheck(p3, p1, sample);
                         double w3 = edgeCheck(p1, p2, sample);
@@ -518,10 +545,10 @@ void Item::render(matrix &t_buffer, QImage &t_image, QMap<QString, Item *> &t_cl
                             {
                                 t_buffer[x][y] = z;
                                 double cosn = w1 * n1[2] + w2 * n2[2] + w3 * n3[2];
-                                QColor ambientColor = m_materialMap[m_polygons[i].materialKey].ka;
-                                QColor diffuseColor = m_materialMap[m_polygons[i].materialKey].kd;
-                                qreal ar, ag, ab;
-                                qreal dr, dg, db;
+                                QColor ambientColor = m_materialMap[m_polygon.materialKey].ka;
+                                QColor diffuseColor = m_materialMap[m_polygon.materialKey].kd;
+                                qreal ar; qreal ag; qreal ab;
+                                qreal dr; qreal dg; qreal db;
                                 ambientColor.getRgbF(&ar, &ag, &ab);
                                 diffuseColor.getRgbF(&dr, &dg, &db);
                                 ambientColor.setRgbF((ar + dr * cosn) / 2, (ag + dg * cosn) / 2, (ab + db * cosn) / 2);
@@ -562,8 +589,8 @@ void Item::outline(QImage &t_image)
     QColor line_color(0, 0, 0);
     int x0 = m_ldx;
     int y0 = m_ldy;
-    int r, g, b;
-    int direction[4][2] = {{m_ldx, m_ruy}, {m_rux, m_ruy}, {m_rux, m_ldy}, {m_ldx, m_ldy}};
+    int r; int g; int b;
+    std::vector<std::vector<int>> direction = {{m_ldx, m_ruy}, {m_rux, m_ruy}, {m_rux, m_ldy}, {m_ldx, m_ldy}};
     for (int i = 0; i < 4; i++)
     {
         int x1 = direction[i][0];
@@ -579,7 +606,7 @@ void Item::outline(QImage &t_image)
         {
             QColor contrastColor(t_image.pixel(x0, y0));
             contrastColor.getRgb(&r, &g, &b);
-            contrastColor.setRgb(abs(255 - r), abs(255 - g), abs(255 - b));
+            contrastColor.setRgb(abs(RGB_MAX - r), abs(RGB_MAX - g), abs(RGB_MAX - b));
             t_image.setPixel(x0, y0, contrastColor.rgba());
             double_error = error << 1;
             if (double_error > -dy)

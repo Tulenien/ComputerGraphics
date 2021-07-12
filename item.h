@@ -93,9 +93,9 @@ public:
     void rotateOZ(double t_angle);
     // Self-rotate
     void spinOY(double t_angle);
-    const matrix topViewMatrix(double t_radAngle);
+    matrix topViewMatrix(double t_radAngle);
     void rasterise(const matrix &t_projection, const int &t_imageWidth,
-                   const int &t_imageHeight, double t_radAngle);
+                   const int &t_imageHeight);
     void render(matrix &t_buffer, QImage &t_image, QMap<QString, Item *> &t_clickSearch,
                 const int &t_width, const int &t_height);
     bool changeIsClicked();
@@ -109,7 +109,7 @@ private:
     QList<Polygon> m_polygons;
     QMap<QString, Material> m_materialMap;
 
-    int m_ldx, m_ldy, m_rux, m_ruy;
+    int m_ldx{}, m_ldy{}, m_rux{}, m_ruy{};
     matrix m_vOriginal, m_nOriginal;
     matrix m_transform;
     matrix m_vPerspective, m_nPerspective;

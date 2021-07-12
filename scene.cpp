@@ -122,7 +122,7 @@ void Scene::renderScene()
             }
 //            if (viewMode) items[i].rasterise(orthograpic, imageWidth, imageHeight, -height * 0.5, radAngle);
 //            else items[i].rasterise(projection, imageWidth, imageHeight, -height * 0.5, qInf());
-            m_items[i].rasterise(*projection, m_imageWidth, m_imageHeight, qInf());
+            m_items[i].rasterise(*projection, m_imageWidth, m_imageHeight);
             m_items[i].render(m_depthBuffer, *m_image, m_clickSearch, m_imageWidth, m_imageHeight);
         }
     }
